@@ -37,6 +37,12 @@ public class MenuScreen extends Screen {
     private double lastWidth = -1;
     private double lastHeight = -1;
 
+    // --- BỔ SUNG: Khai báo 4 nút bấm Menu ---
+    private MenuButton newGameBtn;
+    private MenuButton settingsBtn;
+    private MenuButton howToPlayBtn;
+    private MenuButton creditsBtn;
+
     public MenuScreen() {
         super(SCREEN_NAME);
     }
@@ -75,6 +81,48 @@ public class MenuScreen extends Screen {
         this.brazierSheet = Resources.spritesheets().get("fire5");
         if (this.brazierSheet == null) {
             this.brazierSheet = Resources.spritesheets().get("Fire5");
+        }
+
+        // --- BỔ SUNG: Khởi tạo 4 nút bấm và gán sự kiện ---
+        this.newGameBtn = new MenuButton(0, 0, 220, 48, "NEW GAME");
+        this.settingsBtn = new MenuButton(0, 0, 220, 48, "SETTINGS");
+        this.howToPlayBtn = new MenuButton(0, 0, 220, 48, "HOW TO PLAY");
+        this.creditsBtn = new MenuButton(0, 0, 220, 48, "CREDITS");
+
+        // Bấm nút NEW GAME để sang màn hình chơi chính
+        this.newGameBtn.onClicked(e -> {
+            Game.screens().display(MainGameScreen.SCREEN_NAME);
+        });
+
+        this.settingsBtn.onClicked(e -> System.out.println("Mở SETTINGS"));
+        this.howToPlayBtn.onClicked(e -> System.out.println("Mở HOW TO PLAY"));
+        this.creditsBtn.onClicked(e -> System.out.println("Mở CREDITS"));
+
+        // Thêm vào danh sách quản lý component của màn hình
+        this.getComponents().add(this.newGameBtn);
+        this.getComponents().add(this.settingsBtn);
+        this.getComponents().add(this.howToPlayBtn);
+        this.getComponents().add(this.creditsBtn);
+    }
+
+    /**
+     * --- BỔ SUNG: Hàm căn chỉnh vị trí 4 nút bấm nằm ngay dưới khu vực giữa màn hình ---
+     */
+    
+    private void updateButtonLayout(double screenWidth, double screenHeight) {
+        if (this.newGameBtn == null) return;
+
+        // Thay vì dùng kích thước cố định, ta dùng tỷ lệ phần trăm theo màn hình
+        double btnWidth = screenWidth * 0.26;   
+        double btnHeight = screenHeight * 0.09; 
+        double gap = screenHeight * 0.025;     
+
+        double startX = (screenWidth - btnWidth) / 2.0;
+        double startY = screenHeight * 0.44;    
+        MenuButton[] buttons = { this.newGameBtn, this.settingsBtn, this.howToPlayBtn, this.creditsBtn };
+        for (int i = 0; i < buttons.length; i++) {
+            buttons[i].setDimension(btnWidth, btnHeight);
+            buttons[i].setLocation(startX, startY + i * (btnHeight + gap));
         }
     }
 
@@ -126,7 +174,7 @@ public class MenuScreen extends Screen {
             }
 
             if (this.logoImage != null) {
-                double logoWidth = 1000;
+                double logoWidth = 1000; // Giữ nguyên kích thước gốc của bạn
                 double logoHeight = logoWidth * ((double) this.logoImage.getHeight() / (double) this.logoImage.getWidth());
                 this.cachedLogo = new BufferedImage((int) logoWidth, (int) logoHeight, BufferedImage.TYPE_INT_ARGB);
                 Graphics2D gLogo = this.cachedLogo.createGraphics();
@@ -134,6 +182,9 @@ public class MenuScreen extends Screen {
                 gLogo.drawImage(this.logoImage, 0, 0, (int) logoWidth, (int) logoHeight, null);
                 gLogo.dispose();
             }
+
+            // --- BỔ SUNG: Cập nhật lại tọa độ nút khi resize màn hình ---
+            updateButtonLayout(screenWidth, screenHeight);
         }
 
         // 1. Vẽ ảnh nền bg.png lấp đầy toàn màn hình (Dùng cache đã scale sẵn siêu nhanh)
@@ -178,5 +229,8 @@ public class MenuScreen extends Screen {
             double scaleY = logoHeight / (double) this.logoImage.getHeight();
             ImageRenderer.renderScaled(g, this.logoImage, logoX, logoY, scaleX, scaleY);
         }
+
+        // --- BỔ SUNG: Gọi lệnh vẽ các nút bấm đè lên trên cùng ---
+        super.render(g);
     }
 }
