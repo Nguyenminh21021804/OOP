@@ -1,44 +1,24 @@
-import java.awt.Dimension;
 
+
+import screens.InfoScreen;
 import de.gurkenlabs.litiengine.Game;
-import screens.MainGameScreen;
-import screens.MenuScreen;
+import screens.MainMenuScreen;
+import de.gurkenlabs.litiengine.gui.screens.Resolution;
 
-/**
- * ============================================================================
- * File: App.java
- * Nhiệm vụ: Điểm khởi chạy (Entry Point) của Game.
- * ============================================================================
- */
 public class App {
     public static void main(String[] args) {
-        // 1. Cấu hình thông tin game
-        Game.info().setName("Dungeon Adventure");
+        Game.info().setName("The Last Knight");
         Game.info().setVersion("1.0.0");
-        Game.info().setDescription("An OOP Game built with LITIengine");
-
-        // 2. Khởi tạo engine
+        Game.info().setSubTitle("A project by group 17");
         Game.init(args);
+        Game.window().setResolution(Resolution.custom(1024, 576, "1024x576"));
 
-        // Nạp tài nguyên dự án utiLITI (game.litidata)
-        java.net.URL litidataUrl = App.class.getResource("/game.litidata");
-        if (litidataUrl != null) {
-            de.gurkenlabs.litiengine.resources.Resources.load(litidataUrl);
-        } else if (new java.io.File("app/src/main/resources/game.litidata").exists()) {
-            de.gurkenlabs.litiengine.resources.Resources.load("app/src/main/resources/game.litidata");
-        } else {
-            de.gurkenlabs.litiengine.resources.Resources.load("game.litidata");
-        }
+        Game.screens().add(new MainMenuScreen());
+        Game.screens().add(new InfoScreen("SETTINGS", "Settings"));
+        Game.screens().add(new InfoScreen("HOWTOPLAY", "How to Play"));
+        Game.screens().add(new InfoScreen("CREDITS", "Credits"));
+        Game.screens().display(MainMenuScreen.NAME);
 
-        // 3. Đặt kích thước cửa sổ tỷ lệ 16:9 (1280x720) khớp với ảnh nền bg.png
-        Game.window().getRenderComponent().setPreferredSize(new Dimension(1280, 720));
-
-        // 4. Đăng ký các màn hình
-        Game.screens().add(new MenuScreen());
-        Game.screens().add(new MainGameScreen());
-
-        // 5. Bắt đầu game và hiển thị màn hình chính (MENU)
         Game.start();
-        Game.screens().display("MENU");
     }
 }
