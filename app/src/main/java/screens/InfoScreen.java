@@ -1,7 +1,6 @@
 package screens;
 
 import de.gurkenlabs.litiengine.Game;
-import de.gurkenlabs.litiengine.gui.ImageComponent;
 import de.gurkenlabs.litiengine.gui.screens.GameScreen;
 import de.gurkenlabs.litiengine.resources.Resources;
 
@@ -9,15 +8,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-
 
 public class InfoScreen extends GameScreen {
     private final String title;
-    private BufferedImage background;
-
-    private Font buttonFont;
 
     public InfoScreen(String name, String title) {
         super(name);
@@ -26,37 +19,30 @@ public class InfoScreen extends GameScreen {
 
     @Override
     protected void initializeComponents() {
-        background = Resources.images().get("sprites/menubackground.png");
-        buttonFont = Resources.fonts().get("font/PeaberryBase.ttf").deriveFont(32f);
-
+        double w = Game.window().getResolution().getWidth();
         double h = Game.window().getResolution().getHeight();
-        PixelButton back = new PixelButton(40, h - 100, "Back");
+
+        PixelButton back = new PixelButton((w - PixelButton.BODY_W) / 2.0, h - 100, "Back");
         back.onClicked(e -> Game.screens().display(MainMenuScreen.NAME));
         this.getComponents().add(back);
     }
 
     @Override
     public void render(Graphics2D g) {
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        int w = Game.window().getWidth();
+        int h = Game.window().getHeight();
 
-        buttonFont = Resources.fonts().get("font/PeaberryBase.ttf").deriveFont(32f);
+        MenuBackground.get().draw(g, w, h); // cùng nền và lửa với màn hình chính
 
-        int width = Game.window().getWidth();
-        int height = Game.window().getHeight();
-
-        if (background != null) {
-            g.drawImage(background, 0, 0, width, height, null);
-        }
-
-        g.setColor(new Color(0, 0, 0, 170));
-        g.fillRect(0, 0, width, height);
-
-        g.setFont(buttonFont);
-        g.setColor(new Color(255, 214, 90));
+        // Tiêu đề màn hình
+        g.setFont(Resources.fonts().get("font/PeaberryBase.ttf").deriveFont(32f));
         FontMetrics fm = g.getFontMetrics();
-        g.drawString(title, (width - fm.stringWidth(title)) / 2, 120);
+        int tx = (w - fm.stringWidth(title)) / 2;
+        g.setColor(new Color(20, 8, 4));
+        g.drawString(title, tx + 3, 103);  // bóng đổ để dễ đọc trên nền
+        g.setColor(new Color(255, 214, 90));
+        g.drawString(title, tx, 100);
 
-        super.render(g);
+        super.render(g); // nút Back
     }
 }
