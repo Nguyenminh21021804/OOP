@@ -41,21 +41,25 @@ public class MenuBackground {
         }
     }
 
-    public void draw(Graphics2D g, int w, int h) {
+    public void draw(Graphics2D g, Viewport viewport) {
         Object oldInterp = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                 RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
         if (background != null) {
-            g.drawImage(background, 0, 0, w, h, null);
+            g.drawImage(background,
+                    (int) Math.round(viewport.bgX), (int) Math.round(viewport.bgY),
+                    (int) Math.ceil(Viewport.BG_W * viewport.bgScale),
+                    (int) Math.ceil(Viewport.BG_H * viewport.bgScale), null);
         }
 
-        double scale = w / 256.0;
         long now = Game.time().now();
         for (double[] f : FIRES) {
             FireAnimation anim = fires[(int) f[0] - 1];
             if (anim != null) {
-                anim.draw(g, f[1] * scale, f[2] * scale, scale, now, (long) f[3]);
+                anim.draw(g, viewport.bgX + f[1] * viewport.bgScale,
+                        viewport.bgY + f[2] * viewport.bgScale,
+                        viewport.bgScale, now, (long) f[3]);
             }
         }
 
