@@ -18,6 +18,6 @@ java {
 }
 
 application {
-    mainClass = 'App'
+    mainClass = project.findProperty('mainClass') ?: 'App'
     applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
 }
