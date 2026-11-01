@@ -4,7 +4,12 @@ import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.IUpdateable;
 import de.gurkenlabs.litiengine.entities.Creature;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
+import de.gurkenlabs.litiengine.util.geom.GeometricUtilities;
+import level.PathField;
+import level.RoomData;
+
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 
 /**
  * Lớp trừu tượng cơ sở (Base Class) cho tất cả các loại Enemy trong game.
@@ -27,6 +32,255 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
     // Thời điểm tấn công gần nhất
     protected long lastAttackTime;
+
+    private static final long RETARGET_INTERVAL_MS = 400;
+
+    protected ICombatEntity target;
+
+    private long lastRetargetTime = 0;
+
+    // Di chuyển tự quản (không dùng Game.physics().move)
+    protected float moveSpeed;            // pixel mỗi giây
+    private long lastTickTime = 0;
+    protected double tickSeconds = 0;     // thời gian thật từ tick trước (giây), đã giới hạn
+
+
+    private double footWidth = 10;
+    private double footHeight = 8;
+
+    private static final double SEPARATION_RADIUS = 12;   // khoảng cách tối thiểu giữa tâm hai thực thể (pixel)
+    private static final double SEPARATION_SPEED = 60;    // tốc độ tách tối đa (pixel mỗi giây)
+
+    // =====================================================================
+    //  Tìm mục tiêu
+    // =====================================================================
+
+    /** Tìm lại mục tiêu định kỳ nếu chưa có hoặc mục tiêu cũ không còn hợp lệ. */
+    private void refreshTarget(long now) {
+        // Không đổi mục tiêu giữa chừng khi đang ra đòn
+        if (!canRetarget()) {
+            return;
+        }
+        if (hasValidTarget() && now - lastRetargetTime < RETARGET_INTERVAL_MS) {
+            return;
+        }
+        if (!hasValidTarget() || now - lastRetargetTime >= RETARGET_INTERVAL_MS) {
+            lastRetargetTime = now;
+            this.target = findNearestTarget();
+        }
+    }
+
+    /** Mục tiêu gần nhất thuộc team khác, còn sống, nằm trong tầm phát hiện. */
+    private ICombatEntity findNearestTarget() {
+        if (Game.world().environment() == null) {
+            return null;
+        }
+        ICombatEntity best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (ICombatEntity e : Game.world().environment().getCombatEntities()) {
+            if (e == this || e.isDead() || e.getTeam() == this.getTeam()) {
+                continue;
+            }
+            double d = this.getCenter().distance(e.getCenter());
+            if (d <= detectionRange && d < bestDist) {
+                best = e;
+                bestDist = d;
+            }
+        }
+        return best;
+    }
+
+    protected boolean hasValidTarget() {
+        return target != null && !target.isDead();
+    }
+
+    protected void faceTarget() {
+        if (hasValidTarget()) {
+            this.setAngle(GeometricUtilities.calcRotationAngleInDegrees(
+                    this.getCenter(), target.getCenter()));
+        }
+    }
+
+    // =====================================================================
+    //  Di chuyển
+    // =====================================================================
+
+    /**
+     * Di chuyển hướng về phía một tọa độ.
+     */
+    public void moveTowards(Point2D destination) {
+        stepToward(destination, moveSpeed);
+    }
+
+    protected void stepToward(Point2D destination, double pixelsPerSecond) {
+        if (destination == null || tickSeconds <= 0) {
+            return;
+        }
+        Point2D c = getCenter();
+        double dx = destination.getX() - c.getX();
+        double dy = destination.getY() - c.getY();
+        double len = Math.hypot(dx, dy);
+        if (len < 1e-6) {
+            return;
+        }
+
+        double step = Math.min(len, pixelsPerSecond * tickSeconds);
+        moveBy(dx / len * step, dy / len * step);
+    }
+
+    /** Di chuyển một đoạn (dx, dy), tôn trọng tường và trượt dọc tường khi bị chặn. */
+    protected void moveBy(double dx, double dy) {
+        double nx = getX() + dx;
+        double ny = getY() + dy;
+        if (canOccupy(nx, ny)) {
+            setLocation(nx, ny);
+        } else if (canOccupy(nx, getY())) {      // trượt dọc theo tường
+            setLocation(nx, getY());
+        } else if (canOccupy(getX(), ny)) {
+            setLocation(getX(), ny);
+        }
+    }
+
+    private void stepTowardFeet(Point2D feetDestination, double pixelsPerSecond) {
+        if (tickSeconds <= 0) {
+            return;
+        }
+        Point2D me = feetCenter();
+        double dx = feetDestination.getX() - me.getX();
+        double dy = feetDestination.getY() - me.getY();
+        double len = Math.hypot(dx, dy);
+        if (len < 1e-6) {
+            return;
+        }
+        double step = Math.min(len, pixelsPerSecond * tickSeconds);
+        moveBy(dx / len * step, dy / len * step);
+    }
+
+    /**
+     * Hook va chạm: trả về false nếu quái đặt tại (x, y) sẽ đè lên tường.
+     * Dùng hộp chân của quái so với các hộp va chạm của phòng hiện tại (RoomData).
+     */
+    protected boolean canOccupy(double x, double y) {
+        RoomData room = RoomData.current();
+        return room == null || !room.blocks(footprintAt(x, y));
+    }
+
+    // =====================================================================
+    //  Feetbox, tầm nhìn
+    // =====================================================================
+
+    /** Tâm hộp chân của quái (toạ độ mà bản đồ khoảng cách dùng). */
+    private Point2D feetCenter() {
+        return new Point2D.Double(getX() + getWidth() / 2.0, getY() + getHeight() - footHeight / 2.0);
+    }
+
+    /**
+     * Tâm hộp chân của mục tiêu. Giả định mục tiêu có cùng kích thước thực thể với quái
+     * (đúng với TestDummy; cần chỉnh nếu Player của nhóm có kích thước khác).
+     */
+    private Point2D targetFeet() {
+        Point2D c = target.getCenter();
+        return new Point2D.Double(c.getX(), c.getY() + (getHeight() - footHeight) / 2.0);
+    }
+
+    /** Không có tường chắn giữa quái và mục tiêu (kiểm tra bằng tia mảnh 2x2). */
+    protected boolean hasAttackLine() {
+        RoomData room = RoomData.current();
+        if (room == null || !hasValidTarget()) {
+            return true;
+        }
+        Point2D me = feetCenter();
+        Point2D goal = targetFeet();
+        return room.isPathClear(me.getX(), me.getY(), goal.getX(), goal.getY(), 2, 2);
+    }
+
+    /** [GĐ2] Hộp chân của quái nếu thực thể đặt tại góc trên trái (x, y). */
+    private Rectangle2D footprintAt(double x, double y) {
+        return new Rectangle2D.Double(
+                x + (getWidth() - footWidth) / 2.0,
+                y + getHeight() - footHeight,
+                footWidth, footHeight);
+    }
+
+    /** [GĐ2] Kích thước hộp chân; nên khớp với @CollisionInfo của lớp quái. */
+    public void setFootprint(double width, double height) {
+        this.footWidth = width;
+        this.footHeight = height;
+    }
+
+    /** [GĐ2] Đặt quái sao cho TÂM hộp chân nằm đúng tại (px, py), như điểm spawn trong Tiled. */
+    public void placeFeetAt(double px, double py) {
+        setLocation(px - getWidth() / 2.0, py - getHeight() + footHeight / 2.0);
+    }
+
+    // =====================================================================
+    // Đuổi, tách
+    // =====================================================================
+
+    /** Bước đuổi theo: đi thẳng nếu thông, vòng theo bản đồ khoảng cách nếu bị vật cản chắn. */
+    protected void chaseStep() {
+        faceTarget();
+        RoomData room = RoomData.current();
+        if (room == null) {
+            moveTowards(target.getCenter());
+            return;
+        }
+
+        Point2D me = feetCenter();
+        Point2D goal = targetFeet();
+        if (room.isPathClear(me.getX(), me.getY(), goal.getX(), goal.getY(), footWidth, footHeight)) {
+            moveTowards(target.getCenter());
+            return;
+        }
+
+        Point2D waypoint = PathField.toward(room, goal, footWidth, footHeight).nextWaypoint(me);
+        if (waypoint != null) {
+            stepTowardFeet(waypoint, moveSpeed);
+        } else {
+            moveTowards(target.getCenter());   // không có đường: thử đi thẳng
+        }
+    }
+
+    /**
+     * Đẩy nhẹ quái ra khỏi các thực thể khác (quái khác, người chơi) đang đè lên nó.
+     * Chỉ đẩy chính quái này; mỗi bên tự đẩy mình nên hai quái chồng nhau sẽ tách ra đối xứng.
+     */
+    protected void applySeparation() {
+        if (!canBeSeparated() || tickSeconds <= 0 || Game.world().environment() == null) {
+            return;
+        }
+        Point2D me = getCenter();
+        double pushX = 0;
+        double pushY = 0;
+        for (ICombatEntity other : Game.world().environment().getCombatEntities()) {
+            if (other == this || other.isDead()) {
+                continue;
+            }
+            Point2D c = other.getCenter();
+            double dx = me.getX() - c.getX();
+            double dy = me.getY() - c.getY();
+            double d = Math.hypot(dx, dy);
+            if (d >= SEPARATION_RADIUS) {
+                continue;
+            }
+            if (d < 1e-3) {   // trùng khít: mỗi thực thể tự chọn một hướng riêng để cùng tách ra
+                double angle = Math.toRadians(Math.abs(System.identityHashCode(this) % 360));
+                dx = Math.cos(angle);
+                dy = Math.sin(angle);
+                d = 1;
+            }
+            double weight = (SEPARATION_RADIUS - d) / SEPARATION_RADIUS;   // càng gần càng mạnh
+            pushX += dx / d * weight;
+            pushY += dy / d * weight;
+        }
+        double len = Math.hypot(pushX, pushY);
+        if (len < 1e-6) {
+            return;
+        }
+        double step = SEPARATION_SPEED * tickSeconds * Math.min(1.0, len);
+        moveBy(pushX / len * step, pushY / len * step);
+    }
+
 
     /**
      * Khởi tạo quái vật với các thuộc tính cơ bản.
@@ -52,6 +306,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
         // Cấu hình Creature trong LITIengine
         this.setScaling(true);
         this.setVelocity(speed);
+        this.moveSpeed = speed;
         this.getHitPoints().setMax(maxHealth);
         this.getHitPoints().setValue(maxHealth);
         this.setIndestructible(false);
@@ -71,9 +326,16 @@ public abstract class Enemy extends Creature implements IUpdateable {
         if (isDead()) {
             return;
         }
+        long now = Game.time().now();
+        // Thời gian thật từ tick trước. Nếu update bị gọi hai lần cùng một tick thì lần thứ hai
+        // có dt = 0 nên quái không bao giờ đi nhanh gấp đôi. Giới hạn 50ms để không nhảy vọt sau khi đứng hình.
+        tickSeconds = lastTickTime == 0 ? 0 : Math.min(50, Math.max(0, now - lastTickTime)) / 1000.0;
+        lastTickTime = now;
+        refreshTarget(now);
 
-        // Gọi logic AI cụ thể của từng loại quái
-        updateAI();
+        updateAI();          // logic riêng của từng loại quái
+
+        applySeparation();   // tách khỏi quái khác và người chơi
     }
 
     /**
@@ -153,15 +415,16 @@ public abstract class Enemy extends Creature implements IUpdateable {
         Game.loop().detach(this);
     }
 
-    // --- Helper di chuyển cơ bản ---
-    /**
-     * Di chuyển hướng về phía một tọa độ.
-     */
-    public void moveTowards(Point2D destination) {
-        if (destination == null || this.movement() == null) return;
-        // Bật di chuyển của LITIengine theo hướng đích
-        Game.physics().move(this, destination);
+    /** Có được đổi mục tiêu lúc này không (vd quái cận chiến không đổi giữa lúc ra đòn). */
+    protected boolean canRetarget() {
+        return true;
     }
+
+    /** Có được đẩy tách khỏi thực thể khác lúc này không. */
+    protected boolean canBeSeparated() {
+        return true;
+    }
+
 
     // --- Các phương thức lấy thông tin (Getter & Setter) ---
     public int getCurrentHealth() {
@@ -202,5 +465,15 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
     public void setAttackCooldownMs(long attackCooldownMs) {
         this.attackCooldownMs = attackCooldownMs;
+    }
+
+    public ICombatEntity getTarget() {
+        return target;
+    }
+
+
+    /** Gán mục tiêu thủ công (ví dụ ép quái nhắm vào Player). */
+    public void setTarget(ICombatEntity target) {
+        this.target = target;
     }
 }
