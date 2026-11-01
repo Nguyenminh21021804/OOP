@@ -51,6 +51,23 @@ public abstract class Enemy extends Creature implements IUpdateable {
     private static final double SEPARATION_RADIUS = 12;   // khoảng cách tối thiểu giữa tâm hai thực thể (pixel)
     private static final double SEPARATION_SPEED = 60;    // tốc độ tách tối đa (pixel mỗi giây)
 
+    private long knockbackMs = 100;              // thời gian bị đẩy lùi (nằm trong thời gian choáng)
+    protected double knockbackDistance = 14;      // quãng bị đẩy lùi (pixel)
+
+    private long knockbackBeginTime = 0;         // lúc bắt đầu đợt đẩy hiện tại
+    private double knockbackActiveDistance = 0;  // quãng của đợt đẩy hiện tại (0 = không đẩy)
+    private double knockbackAppliedDist = 0;     // đã đẩy được bao xa trong đợt này
+    private double knockbackDirX;                // hướng đẩy (vector đơn vị), (0,0) = không đẩy
+    private double knockbackDirY;
+
+    private int lastKnownHp;                     // mốc máu để phát hiện bị đánh
+
+    private boolean deathScheduled = false;
+
+    protected MonsterType type;   // loại quái (phe, tên sprite); null thì không có hiệu ứng mặc định
+
+    private static final long FLASH_MS = 80;
+
     // =====================================================================
     //  Tìm mục tiêu
     // =====================================================================
@@ -281,6 +298,91 @@ public abstract class Enemy extends Creature implements IUpdateable {
         moveBy(pushX / len * step, pushY / len * step);
     }
 
+    // =====================================================================
+    // Phản ứng chịu đòn
+    // =====================================================================
+
+    /** So máu với lần trước: giảm nghĩa là vừa bị đánh (bắt được mọi nguồn sát thương). */
+    private void detectDamage(long now) {
+        int hp = getHitPoints().getValue();
+        if (hp < lastKnownHp) {
+            int lost = lastKnownHp - hp;
+            lastKnownHp = hp;
+            if (hp > 0) {            // hết máu thì để die() xử lý
+                onDamaged(lost, now);
+            }
+        } else {
+            lastKnownHp = hp;        // hồi máu thì cập nhật mốc
+        }
+    }
+
+    /** Bắt đầu một đợt đẩy lùi: ra xa kẻ đánh (mục tiêu hiện tại). Không có mục tiêu thì không đẩy. */
+    protected void beginKnockback(long now, double distance) {
+        knockbackDirX = 0;
+        knockbackDirY = 0;
+        if (hasValidTarget()) {
+            Point2D me = getCenter();
+            Point2D from = target.getCenter();
+            double dx = me.getX() - from.getX();
+            double dy = me.getY() - from.getY();
+            double len = Math.hypot(dx, dy);
+            if (len > 1e-6) {
+                knockbackDirX = dx / len;
+                knockbackDirY = dy / len;
+            } else {
+                knockbackDirX = 1;   // chồng khít nhau: đẩy sang phải
+            }
+        }
+        knockbackBeginTime = now;
+        knockbackActiveDistance = distance;
+        knockbackAppliedDist = 0;
+    }
+
+    /**
+     * Áp dụng đợt đẩy lùi theo từng bước nhỏ (giảm tốc dần), cộng dồn lên vị trí hiện tại
+     * nên chạy song song được với chuyển động khác mà không giật về chỗ cũ.
+     */
+    private void applyKnockback(long now) {
+        if (knockbackActiveDistance <= 0 || knockbackMs <= 0) {
+            return;
+        }
+        double t = Math.min(1.0, (double) (now - knockbackBeginTime) / knockbackMs);
+        double eased = 1.0 - (1.0 - t) * (1.0 - t);
+        double delta = knockbackActiveDistance * eased - knockbackAppliedDist;
+        if (delta > 0) {
+            double nx = getX() + knockbackDirX * delta;
+            double ny = getY() + knockbackDirY * delta;
+            if (canOccupy(nx, ny)) {
+                setLocation(nx, ny);
+                knockbackAppliedDist += delta;
+            }
+        }
+        if (t >= 1.0) {
+            knockbackActiveDistance = 0;   // xong đợt đẩy
+        }
+    }
+
+    // =====================================================================
+    //   Dead
+    // =====================================================================
+
+    /** Hoãn tới tick sau để không gỡ quái ngay giữa lúc engine còn đang xử lý đòn đánh. */
+    private void scheduleDeath() {
+        if (deathScheduled) {
+            return;
+        }
+        deathScheduled = true;
+        Game.loop().perform(1, this::handleDeath);
+    }
+
+    private void handleDeath() {
+        target = null;
+        onDeath();   // hook chạy khi quái còn trong màn chơi, để hiệu ứng chụp được hình ảnh cuối
+        Game.loop().detach(this);
+        if (Game.world().environment() != null) {
+            Game.world().environment().remove(this);
+        }
+    }
 
     /**
      * Khởi tạo quái vật với các thuộc tính cơ bản.
@@ -298,6 +400,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
         super(spritePrefix);
 
         this.damage = damage;
+        this.lastKnownHp = maxHealth;
         this.attackRange = attackRange;
         this.detectionRange = detectionRange;
         this.attackCooldownMs = cooldownMs;
@@ -324,18 +427,19 @@ public abstract class Enemy extends Creature implements IUpdateable {
     @Override
     public void update() {
         if (isDead()) {
+            scheduleDeath();   // xử lý cái chết đúng một lần, dù engine gọi die() lúc nào
             return;
         }
         long now = Game.time().now();
-        // Thời gian thật từ tick trước. Nếu update bị gọi hai lần cùng một tick thì lần thứ hai
-        // có dt = 0 nên quái không bao giờ đi nhanh gấp đôi. Giới hạn 50ms để không nhảy vọt sau khi đứng hình.
         tickSeconds = lastTickTime == 0 ? 0 : Math.min(50, Math.max(0, now - lastTickTime)) / 1000.0;
         lastTickTime = now;
         refreshTarget(now);
+        detectDamage(now);     // mất máu -> gọi onDamaged
+        applyKnockback(now);   // đẩy lùi chạy độc lập với trạng thái
 
-        updateAI();          // logic riêng của từng loại quái
+        updateAI();            // logic riêng của từng loại quái
 
-        applySeparation();   // tách khỏi quái khác và người chơi
+        applySeparation();     // tách khỏi quái khác và người chơi
     }
 
     /**
@@ -412,7 +516,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
     @Override
     public void die() {
         super.die();
-        Game.loop().detach(this);
+        scheduleDeath();
     }
 
     /** Có được đổi mục tiêu lúc này không (vd quái cận chiến không đổi giữa lúc ra đòn). */
@@ -471,9 +575,35 @@ public abstract class Enemy extends Creature implements IUpdateable {
         return target;
     }
 
-
     /** Gán mục tiêu thủ công (ví dụ ép quái nhắm vào Player). */
     public void setTarget(ICombatEntity target) {
         this.target = target;
+    }
+
+    public void setType(MonsterType type) { this.type = type; }
+
+    public MonsterType getType() { return type; }
+
+    public void setKnockbackMs(long knockbackMs) { this.knockbackMs = knockbackMs; }
+    public void setKnockbackDistance(double knockbackDistance) { this.knockbackDistance = knockbackDistance; }
+
+    /**  Vừa bị đánh (kể cả khi không bị choáng): nháy trắng, âm thanh trúng đòn. */
+    protected void onHurt(int amount) {
+        if (type != null) {   // [GĐ5]
+            SpriteFlashVfx.flash(this, type.getSpritePrefix(), FLASH_MS);
+        }
+    }
+
+    /**  Quái vừa chết (gọi một lần, trước khi gỡ khỏi màn chơi): hiệu ứng, âm thanh, rơi đồ. */
+    protected void onDeath() {
+        if (type != null) {   // [GĐ5]
+            SpriteFlashVfx.burst(this, type.getSpritePrefix(), type.getFaction().getEffectColor());
+        }
+    }
+
+    /** Vừa mất máu. Mặc định: nháy trắng và đẩy lùi. Lớp con ghi đè nếu cần thêm (vd choáng, ngắt đòn). */
+    protected void onDamaged(int amount, long now) {
+        onHurt(amount);
+        beginKnockback(now, knockbackDistance);
     }
 }
