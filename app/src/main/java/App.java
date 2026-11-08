@@ -3,6 +3,7 @@
 import screens.InfoScreen;
 import de.gurkenlabs.litiengine.Game;
 import screens.MainMenuScreen;
+import screens.PlayScreen;
 import de.gurkenlabs.litiengine.gui.screens.Resolution;
 
 public class App {
@@ -14,6 +15,7 @@ public class App {
         Game.window().setResolution(Resolution.custom(1024, 576, "1024x576"));
 
         Game.screens().add(new MainMenuScreen());
+        Game.screens().add(new PlayScreen());
         Game.screens().add(new InfoScreen("SETTINGS", "Settings"));
         Game.screens().add(new InfoScreen("HOWTOPLAY", "How to Play"));
         Game.screens().add(new InfoScreen("CREDITS", "Credits"));
