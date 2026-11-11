@@ -5,11 +5,16 @@ import de.gurkenlabs.litiengine.IUpdateable;
 import de.gurkenlabs.litiengine.entities.Creature;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import de.gurkenlabs.litiengine.util.geom.GeometricUtilities;
+import de.gurkenlabs.litiengine.graphics.animation.Animation;
+import de.gurkenlabs.litiengine.resources.Resources;
 import level.PathField;
 import level.RoomData;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Lớp trừu tượng cơ sở (Base Class) cho tất cả các loại Enemy trong game.
@@ -68,27 +73,43 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
     private static final long FLASH_MS = 80;
 
+    // Nhận biết và nhà
+    protected double hearingRange = 48;   // nghe thấy ở khoảng cách này dù có tường chắn (pixel)
+    protected Point2D home;               // điểm quay về (tâm hộp chân), mặc định là nơi sinh ra
+
+    // [GĐ11] Hướng nhìn hiện tại (chỉ trái hoặc phải) và các animation hành động đã tạo
+    private boolean facingLeft = false;
+    private final Map<String, Animation> actionAnimations = new HashMap<>();
+
+    private final String spriteName;   // [GĐ11] tên sprite (có hậu tố _elite với quái elite), dùng để tìm sheet hành động
+
     // =====================================================================
     //  Tìm mục tiêu
     // =====================================================================
 
     /** Tìm lại mục tiêu định kỳ nếu chưa có hoặc mục tiêu cũ không còn hợp lệ. */
     private void refreshTarget(long now) {
-        // Không đổi mục tiêu giữa chừng khi đang ra đòn
         if (!canRetarget()) {
             return;
         }
         if (hasValidTarget() && now - lastRetargetTime < RETARGET_INTERVAL_MS) {
             return;
         }
-        if (!hasValidTarget() || now - lastRetargetTime >= RETARGET_INTERVAL_MS) {
-            lastRetargetTime = now;
-            this.target = findNearestTarget();
+        lastRetargetTime = now;
+        ICombatEntity seen = findNearestTarget();   // chỉ trả về thực thể nhận biết được
+        if (seen != null) {
+            this.target = seen;
+        } else if (!hasValidTarget()) {
+            this.target = null;   // mục tiêu cũ đã chết hoặc biến mất; còn sống thì giữ lại
         }
     }
 
-    /** Mục tiêu gần nhất thuộc team khác, còn sống, nằm trong tầm phát hiện. */
     private ICombatEntity findNearestTarget() {
+        return findNearest(detectionRange, true);
+    }
+
+    /** Thực thể kẻ địch còn sống gần nhất trong bán kính radius; needPerception: chỉ tính những gì quái nhận biết được. */
+    protected ICombatEntity findNearest(double radius, boolean needPerception) {
         if (Game.world().environment() == null) {
             return null;
         }
@@ -98,8 +119,8 @@ public abstract class Enemy extends Creature implements IUpdateable {
             if (e == this || e.isDead() || e.getTeam() == this.getTeam()) {
                 continue;
             }
-            double d = this.getCenter().distance(e.getCenter());
-            if (d <= detectionRange && d < bestDist) {
+            double d = getCenter().distance(e.getCenter());
+            if (d <= radius && d < bestDist && (!needPerception || canPerceive(e))) {
                 best = e;
                 bestDist = d;
             }
@@ -111,11 +132,22 @@ public abstract class Enemy extends Creature implements IUpdateable {
         return target != null && !target.isDead();
     }
 
+    /** Quay mặt về phía mục tiêu, chỉ trái hoặc phải (sprite 0x72 không có tranh nhìn lên hay xuống). */
     protected void faceTarget() {
-        if (hasValidTarget()) {
-            this.setAngle(GeometricUtilities.calcRotationAngleInDegrees(
-                    this.getCenter(), target.getCenter()));
+        if (!hasValidTarget()) {
+            return;
         }
+        double dx = target.getCenter().getX() - getCenter().getX();
+        if (Math.abs(dx) > 0.5) {   // gần như thẳng đứng: giữ hướng cũ
+            faceHorizontal(dx < 0);
+        }
+    }
+
+    protected void faceHorizontal(boolean left) {
+        facingLeft = left;
+        Point2D me = getCenter();
+        Point2D ahead = new Point2D.Double(me.getX() + (left ? -10 : 10), me.getY());
+        setAngle(GeometricUtilities.calcRotationAngleInDegrees(me, ahead));
     }
 
     // =====================================================================
@@ -143,6 +175,8 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
         double step = Math.min(len, pixelsPerSecond * tickSeconds);
         moveBy(dx / len * step, dy / len * step);
+
+        emitDust(dx / len, dy / len);
     }
 
     /** Di chuyển một đoạn (dx, dy), tôn trọng tường và trượt dọc tường khi bị chặn. */
@@ -171,6 +205,8 @@ public abstract class Enemy extends Creature implements IUpdateable {
         }
         double step = Math.min(len, pixelsPerSecond * tickSeconds);
         moveBy(dx / len * step, dy / len * step);
+
+        emitDust(dx / len, dy / len);
     }
 
     /**
@@ -182,12 +218,27 @@ public abstract class Enemy extends Creature implements IUpdateable {
         return room == null || !room.blocks(footprintAt(x, y));
     }
 
+    /**
+     *  hiệu ứng bụi khi quái di chuyển
+     */
+    private long lastDustTime = 0;
+
+    private void emitDust(double dirX, double dirY) {
+        long now = Game.time().now();
+        if (now - lastDustTime < 140) {
+            return;
+        }
+        lastDustTime = now;
+        Point2D f = feetCenter();
+        EnemyFx.dust(f.getX(), f.getY() + footHeight / 2.0, dirX, dirY);
+    }
+
     // =====================================================================
     //  Feetbox, tầm nhìn
     // =====================================================================
 
     /** Tâm hộp chân của quái (toạ độ mà bản đồ khoảng cách dùng). */
-    private Point2D feetCenter() {
+    protected Point2D feetCenter() {
         return new Point2D.Double(getX() + getWidth() / 2.0, getY() + getHeight() - footHeight / 2.0);
     }
 
@@ -195,7 +246,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
      * Tâm hộp chân của mục tiêu. Giả định mục tiêu có cùng kích thước thực thể với quái
      * (đúng với TestDummy; cần chỉnh nếu Player của nhóm có kích thước khác).
      */
-    private Point2D targetFeet() {
+    protected Point2D targetFeet() {
         Point2D c = target.getCenter();
         return new Point2D.Double(c.getX(), c.getY() + (getHeight() - footHeight) / 2.0);
     }
@@ -228,6 +279,34 @@ public abstract class Enemy extends Creature implements IUpdateable {
     /** [GĐ2] Đặt quái sao cho TÂM hộp chân nằm đúng tại (px, py), như điểm spawn trong Tiled. */
     public void placeFeetAt(double px, double py) {
         setLocation(px - getWidth() / 2.0, py - getHeight() + footHeight / 2.0);
+        home = new Point2D.Double(px, py);
+    }
+
+    /**
+     * Có nhận biết được thực thể e không: nhìn thấy (trong tầm phát hiện và không bị tường chắn)
+     * hoặc nghe thấy (rất gần, xuyên tường).
+     */
+    protected boolean canPerceive(ICombatEntity e) {
+        return canPerceive(e, 1.0);
+    }
+
+    /** rangeScale > 1 để nới tầm nhận biết cho quái đang bám theo (chống chập chờn ở ranh giới). */
+    protected boolean canPerceive(ICombatEntity e, double rangeScale) {
+        Point2D c = e.getCenter();
+        double d = getCenter().distance(c);
+        if (d <= hearingRange * rangeScale) {
+            return true;
+        }
+        if (d > detectionRange * rangeScale) {
+            return false;
+        }
+        RoomData room = RoomData.current();
+        if (room == null) {
+            return true;
+        }
+        Point2D me = feetCenter();
+        double feetY = c.getY() + (getHeight() - footHeight) / 2.0;   // giả định cùng cỡ thực thể như targetFeet()
+        return room.isPathClear(me.getX(), me.getY(), c.getX(), feetY, 2, 2);
     }
 
     // =====================================================================
@@ -235,27 +314,35 @@ public abstract class Enemy extends Creature implements IUpdateable {
     // =====================================================================
 
     /** Bước đuổi theo: đi thẳng nếu thông, vòng theo bản đồ khoảng cách nếu bị vật cản chắn. */
+    /**
+     * Đi tới một điểm (toạ độ tâm chân): đi thẳng nếu thông, vòng theo PathField nếu bị vật cản chắn.
+     * faceMove: quay mặt theo hướng đi (dùng khi không nhìn mục tiêu, vd tìm kiếm hoặc quay về).
+     *
+     * @return true nếu đã tới trong bán kính arriveRadius
+     */
+    protected boolean moveToPoint(Point2D goalFeet, double pixelsPerSecond, double arriveRadius, boolean faceMove) {
+        Point2D me = feetCenter();
+        if (me.distance(goalFeet) <= arriveRadius) {
+            return true;
+        }
+        Point2D next = goalFeet;
+        RoomData room = RoomData.current();
+        if (room != null && !room.isPathClear(me.getX(), me.getY(), goalFeet.getX(), goalFeet.getY(), footWidth, footHeight)) {
+            Point2D waypoint = PathField.toward(room, goalFeet, footWidth, footHeight).nextWaypoint(me);
+            if (waypoint != null) {
+                next = waypoint;
+            }
+        }
+        if (faceMove && Math.abs(next.getX() - me.getX()) > 0.5) {
+            faceHorizontal(next.getX() < me.getX());
+        }
+        stepTowardFeet(next, pixelsPerSecond);
+        return false;
+    }
+
     protected void chaseStep() {
         faceTarget();
-        RoomData room = RoomData.current();
-        if (room == null) {
-            moveTowards(target.getCenter());
-            return;
-        }
-
-        Point2D me = feetCenter();
-        Point2D goal = targetFeet();
-        if (room.isPathClear(me.getX(), me.getY(), goal.getX(), goal.getY(), footWidth, footHeight)) {
-            moveTowards(target.getCenter());
-            return;
-        }
-
-        Point2D waypoint = PathField.toward(room, goal, footWidth, footHeight).nextWaypoint(me);
-        if (waypoint != null) {
-            stepTowardFeet(waypoint, moveSpeed);
-        } else {
-            moveTowards(target.getCenter());   // không có đường: thử đi thẳng
-        }
+        moveToPoint(targetFeet(), moveSpeed, 0, false);
     }
 
     /**
@@ -385,6 +472,34 @@ public abstract class Enemy extends Creature implements IUpdateable {
     }
 
     /**
+     * [GĐ11] Phát một animation hành động chạy đúng một lần (lấy đà, chém, bị đánh...).
+     * Sheet phải đặt tên <prefix>-<action>-<left|right>.png và đã được nạp bằng Resources.spritesheets().load.
+     * Animation không lặp nên engine không chèn idle/move vào giữa; chạy xong engine tự quay về idle/move.
+     * Thiếu sheet thì bỏ qua êm, quái vẫn hoạt động bình thường.
+     *
+     * @param totalMs tổng thời gian của animation
+     * @param frames  số frame trong sheet
+     */
+    protected void playAction(String action, int totalMs, int frames) {
+        String sheet = spriteName + "-" + action + "-" + (facingLeft ? "left" : "right") + ".png";
+        Animation anim = actionAnimations.get(sheet);
+        if (anim == null) {
+            if (Resources.spritesheets().get(sheet) == null) {
+                System.out.println("[Anim] thieu sheet " + sheet);   // TẠM: xóa khi đã kiểm chứng
+                return;
+            }
+            int[] durations = new int[frames];
+            Arrays.fill(durations, 100);
+            anim = new Animation(sheet, false, false, durations);
+            animations().add(anim);
+            actionAnimations.put(sheet, anim);
+        }
+        anim.setDurationForAllKeyFrames(Math.max(30, totalMs / frames));
+        anim.restart();
+        animations().play(anim.getName());
+    }
+
+    /**
      * Khởi tạo quái vật với các thuộc tính cơ bản.
      *
      * @param spritePrefix    Tên tiền tố của sprite animation (ví dụ: "goblin", "skeleton")
@@ -399,6 +514,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
                  double attackRange, double detectionRange, long cooldownMs) {
         super(spritePrefix);
 
+        this.spriteName = spritePrefix;
         this.damage = damage;
         this.lastKnownHp = maxHealth;
         this.attackRange = attackRange;
@@ -430,7 +546,15 @@ public abstract class Enemy extends Creature implements IUpdateable {
             scheduleDeath();   // xử lý cái chết đúng một lần, dù engine gọi die() lúc nào
             return;
         }
+
+        EnemyFx.ensureRegistered();
+
         long now = Game.time().now();
+
+        if (home == null) {
+            home = feetCenter();   // chưa được đặt bằng placeFeetAt thì lấy chỗ đang đứng
+        }
+
         tickSeconds = lastTickTime == 0 ? 0 : Math.min(50, Math.max(0, now - lastTickTime)) / 1000.0;
         lastTickTime = now;
         refreshTarget(now);
@@ -575,6 +699,10 @@ public abstract class Enemy extends Creature implements IUpdateable {
         return target;
     }
 
+    public Point2D getFeetCenter() { return feetCenter(); }
+    public double getFootWidth() { return footWidth; }
+    public double getFootHeight() { return footHeight; }
+
     /** Gán mục tiêu thủ công (ví dụ ép quái nhắm vào Player). */
     public void setTarget(ICombatEntity target) {
         this.target = target;
@@ -587,11 +715,29 @@ public abstract class Enemy extends Creature implements IUpdateable {
     public void setKnockbackMs(long knockbackMs) { this.knockbackMs = knockbackMs; }
     public void setKnockbackDistance(double knockbackDistance) { this.knockbackDistance = knockbackDistance; }
 
+    public void setHearingRange(double hearingRange) { this.hearingRange = hearingRange; }
+
     /**  Vừa bị đánh (kể cả khi không bị choáng): nháy trắng, âm thanh trúng đòn. */
     protected void onHurt(int amount) {
-        if (type != null) {   // [GĐ5]
-            SpriteFlashVfx.flash(this, type.getSpritePrefix(), FLASH_MS);
+        if (type == null) {
+            return;
         }
+        SpriteFlashVfx.flash(this, type.getFlashImagePath(), FLASH_MS);
+
+        // Tia lửa văng ra xa kẻ đánh
+        Point2D me = getCenter();
+        double dx = 0;
+        double dy = 0;
+        if (hasValidTarget()) {
+            dx = me.getX() - target.getCenter().getX();
+            dy = me.getY() - target.getCenter().getY();
+            double len = Math.hypot(dx, dy);
+            if (len > 1e-6) {
+                dx /= len;
+                dy /= len;
+            }
+        }
+        EnemyFx.sparks(me.getX(), me.getY(), dx, dy, type.getFaction().getEffectColor(), 6);
     }
 
     /**  Quái vừa chết (gọi một lần, trước khi gỡ khỏi màn chơi): hiệu ứng, âm thanh, rơi đồ. */
