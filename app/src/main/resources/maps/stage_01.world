@@ -1,0 +1,55 @@
+{
+  "maps": [
+    {
+      "fileName": "Map_01.tmx",
+      "x": 0,
+      "y": 224,
+      "width": 352,
+      "height": 208
+    },
+    {
+      "fileName": "Map_02_vuc_tham.tmx",
+      "x": 368,
+      "y": 224,
+      "width": 352,
+      "height": 192
+    },
+    {
+      "fileName": "Map_03_trap.tmx",
+      "x": 744,
+      "y": 240,
+      "width": 352,
+      "height": 192
+    },
+    {
+      "fileName": "Map_04_parkour.tmx",
+      "x": 1128,
+      "y": 224,
+      "width": 352,
+      "height": 208
+    },
+    {
+      "fileName": "Map_05_boss.tmx",
+      "x": 1512,
+      "y": 240,
+      "width": 352,
+      "height": 192
+    },
+    {
+      "fileName": "Map_01_challenge_room.tmx",
+      "x": 64,
+      "y": 16,
+      "width": 224,
+      "height": 160
+    },
+    {
+      "fileName": "Map_04_challenge_room.tmx",
+      "x": 1176,
+      "y": 0,
+      "width": 224,
+      "height": 176
+    }
+  ],
+  "onlyShowAdjacentMaps": false,
+  "type": "world"
+}

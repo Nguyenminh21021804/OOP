@@ -6,6 +6,9 @@ import screens.Viewport;
 import weapons.BowLv1;
 import weapons.BowLv2;
 import weapons.BowLv3;
+import weapons.MeleeWeapon;
+import weapons.Projectile;
+import weapons.RangedWeapon;
 import weapons.SpearLv1;
 import weapons.SpearLv2;
 import weapons.SpearLv3;
@@ -15,7 +18,6 @@ import weapons.StaffLv3;
 import weapons.SwordLv1;
 import weapons.SwordLv2;
 import weapons.SwordLv3;
-
 import weapons.Weapon;
 
 import java.awt.Color;
@@ -23,6 +25,8 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
+import java.awt.geom.Rectangle2D;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +51,14 @@ public class PlayerController {
     private final List<Weapon> weapons = new ArrayList<>();
     private int currentWeaponIndex = 0;
     private Weapon currentWeapon = null;
+
+    // Danh sách tường cản và cột đá
+    private final List<Rectangle2D.Double> mapColliders = new ArrayList<>();
+
+    // Hitbox đặt chuẩn ngay dưới bàn chân nhân vật (khớp với tỷ lệ spriteScale = 2.8)
+    private static final double HITBOX_W = 26.0;
+    private static final double HITBOX_H = 16.0;
+    private static final double HITBOX_OFFSET_Y = 30.0;
 
     private final Set<Integer> pressedKeys = new HashSet<>();
     private boolean jKeyLocked = false;
@@ -76,6 +88,82 @@ public class PlayerController {
         this.currentWeapon = weapons.get(currentWeaponIndex);
 
         setupInput();
+    }
+
+    public void setMapColliders(List<Rectangle2D.Double> colliders) {
+        this.mapColliders.clear();
+        if (colliders != null) {
+            this.mapColliders.addAll(colliders);
+        }
+    }
+
+    public Rectangle2D.Double getFootHitbox(double charX, double charY) {
+        return new Rectangle2D.Double(
+                charX - HITBOX_W / 2.0,
+                charY + HITBOX_OFFSET_Y - HITBOX_H / 2.0,
+                HITBOX_W,
+                HITBOX_H
+        );
+    }
+
+    private boolean isCollidingWithMap(double testX, double testY) {
+        Rectangle2D.Double footBox = getFootHitbox(testX, testY);
+        for (Rectangle2D.Double wall : mapColliders) {
+            if (footBox.intersects(wall)) return true;
+        }
+        return false;
+    }
+
+    // Di chuyển trượt dọc theo mặt tường
+    private void moveWithCollision(double moveX, double moveY) {
+        double curX = character.getX();
+        double curY = character.getY();
+
+        int steps = Math.max(1, (int) Math.ceil(Math.hypot(moveX, moveY) / 4.0));
+        double stepX = moveX / steps;
+        double stepY = moveY / steps;
+
+        for (int i = 0; i < steps; i++) {
+            if (!isCollidingWithMap(curX + stepX, curY)) curX += stepX;
+            if (!isCollidingWithMap(curX, curY + stepY)) curY += stepY;
+        }
+
+        character.setPosition(curX, curY);
+    }
+
+    // Tự động kích nổ đạn khi đập vào tường
+    @SuppressWarnings("unchecked")
+    private void checkProjectileWallCollisions() {
+        if (mapColliders.isEmpty()) return;
+
+        for (Weapon w : weapons) {
+            if (w instanceof RangedWeapon) {
+                try {
+                    Field f = RangedWeapon.class.getDeclaredField("projectiles");
+                    f.setAccessible(true);
+                    triggerProjectilesOnWall((List<Projectile>) f.get(w));
+                } catch (Exception ignored) {}
+            }
+            if (w instanceof MeleeWeapon) {
+                try {
+                    Field f = MeleeWeapon.class.getDeclaredField("skillProjectiles");
+                    f.setAccessible(true);
+                    triggerProjectilesOnWall((List<Projectile>) f.get(w));
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
+    private void triggerProjectilesOnWall(List<Projectile> projectiles) {
+        if (projectiles == null) return;
+        for (Projectile p : projectiles) {
+            for (Rectangle2D.Double wall : mapColliders) {
+                if (wall.contains(p.getX(), p.getY())) {
+                    p.triggerImpact();
+                    break;
+                }
+            }
+        }
     }
 
     private void setupInput() {
@@ -153,6 +241,7 @@ public class PlayerController {
         for (Weapon w : weapons) {
             w.update(dt, character);
         }
+        checkProjectileWallCollisions();
 
         if (character.isDead()) {
             dashing = false;
@@ -167,9 +256,9 @@ public class PlayerController {
             if (now - dashStartTime >= dashDurationMs) {
                 dashing = false;
             } else {
-                double nextX = character.getX() + dashDirX * dashSpeed * dt;
-                double nextY = character.getY() + dashDirY * dashSpeed * dt;
-                character.setPosition(nextX, nextY);
+                double moveX = dashDirX * dashSpeed * dt;
+                double moveY = dashDirY * dashSpeed * dt;
+                moveWithCollision(moveX, moveY);
             }
         } else {
             double dx = 0, dy = 0;
@@ -183,9 +272,9 @@ public class PlayerController {
                 dx /= len;
                 dy /= len;
 
-                double nextX = character.getX() + dx * moveSpeed * dt;
-                double nextY = character.getY() + dy * moveSpeed * dt;
-                character.setPosition(nextX, nextY);
+                double moveX = dx * moveSpeed * dt;
+                double moveY = dy * moveSpeed * dt;
+                moveWithCollision(moveX, moveY);
                 moving = true;
 
                 if (dx > 0) character.setFacingRight(true);

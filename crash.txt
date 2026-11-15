@@ -1,24 +1,55 @@
-Tue Oct 20 17:18:13 GMT+07:00 2026 Main Update Loop threw an exception:
-java.lang.NullPointerException: Cannot invoke "java.awt.Font.deriveFont(float)" because the return value of "de.gurkenlabs.litiengine.resources.Fonts.get(String)" is null
-	at screens.InfoScreen.render(InfoScreen.java:49)
+Sun Nov 15 11:22:26 GMT+07:00 2026 Main Update Loop threw an exception:
+de.gurkenlabs.litiengine.resources.ResourceLoadException: javax.imageio.IIOException: Can't get input stream from URL!
+	at de.gurkenlabs.litiengine.resources.ResourcesContainer.loadResource(ResourcesContainer.java:445)
+	at de.gurkenlabs.litiengine.resources.ResourcesContainer.get(ResourcesContainer.java:275)
+	at de.gurkenlabs.litiengine.resources.ResourcesContainer.get(ResourcesContainer.java:299)
+	at de.gurkenlabs.litiengine.resources.Spritesheets.load(Spritesheets.java:178)
+	at de.gurkenlabs.litiengine.environment.tilemap.xml.Tileset.getSpritesheet(Tileset.java:214)
+	at de.gurkenlabs.litiengine.environment.tilemap.xml.TilesetEntry.getBasicImage(TilesetEntry.java:89)
+	at de.gurkenlabs.litiengine.environment.tilemap.xml.TilesetEntry.getImage(TilesetEntry.java:79)
+	at de.gurkenlabs.litiengine.environment.tilemap.xml.Tile.getImage(Tile.java:121)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.drawTile(MapRenderer.java:141)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.drawRow(MapRenderer.java:131)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.renderTileLayer(MapRenderer.java:114)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.renderLayers(MapRenderer.java:85)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.render(MapRenderer.java:71)
+	at de.gurkenlabs.litiengine.environment.Environment.render(Environment.java:2240)
+	at de.gurkenlabs.litiengine.environment.Environment.render(Environment.java:2081)
+	at screens.PlayScreen.render(PlayScreen.java:89)
 	at de.gurkenlabs.litiengine.graphics.RenderComponent.renderScreen(RenderComponent.java:217)
 	at de.gurkenlabs.litiengine.graphics.RenderComponent.renderGraphics(RenderComponent.java:170)
 	at de.gurkenlabs.litiengine.graphics.RenderComponent.render(RenderComponent.java:148)
 	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:93)
 	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)
+Caused by: javax.imageio.IIOException: Can't get input stream from URL!
+	at java.desktop/javax.imageio.ImageIO.read(ImageIO.java:1355)
+	at de.gurkenlabs.litiengine.resources.Images.load(Images.java:46)
+	at de.gurkenlabs.litiengine.resources.Images.load(Images.java:13)
+	at de.gurkenlabs.litiengine.resources.ResourcesContainer.loadResource(ResourcesContainer.java:443)
+	... 20 more
+Caused by: java.io.FileNotFoundException: F:\OOP\app\build\resources\main\maps\sprites\0x72_DungeonTilesetII_v1.7\atlas_floor-16x16.png (The system cannot find the path specified)
+	at java.base/java.io.FileInputStream.open0(Native Method)
+	at java.base/java.io.FileInputStream.open(FileInputStream.java:185)
+	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:139)
+	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:109)
+	at java.base/sun.net.www.protocol.file.FileURLConnection.connect(FileURLConnection.java:126)
+	at java.base/sun.net.www.protocol.file.FileURLConnection.getInputStream(FileURLConnection.java:231)
+	at java.base/java.net.URL.openStream(URL.java:1260)
+	at java.desktop/javax.imageio.ImageIO.read(ImageIO.java:1353)
+	... 23 more
 
 ====Runtime Information====
-Operating System: Windows 10
+Operating System: Windows 11
 	Architecture: amd64
 	Version: 10.0
 Memory:
-	Max heap size: 4.0 GiB
-	Current heap size: 102.0 MiB
-	Heap used: 72.3 MiB
-	Free heap: 29.7 MiB
-Java Version: OpenJDK Runtime Environment 27+35-2325 
+	Max heap size: 3.9 GiB
+	Current heap size: 66.0 MiB
+	Heap used: 39.7 MiB
+	Free heap: 26.3 MiB
+Java Version: Java(TM) SE Runtime Environment 27+35-2325 
 	Vendor: Oracle Corporation
-Uptime: PT6.268S
+Uptime: PT1.747S
 Screens: 1
-	Screen 0: 2560x1440@60hz
+	Screen 0: 2560x1600@180hz
 
