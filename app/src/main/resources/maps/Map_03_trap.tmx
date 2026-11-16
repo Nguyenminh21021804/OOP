@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="22" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="61">
+ <tileset firstgid="1" source="room_items.tsx"/>
+ <tileset firstgid="101" source="room_frame.tsx"/>
+ <tileset firstgid="149" source="item.tsx"/>
+ <tileset firstgid="241" source="floor_traps.tsx"/>
+ <layer id="1" name="ground" width="22" height="13">
+  <data encoding="csv">
+7,9,30,30,18,8,19,17,20,7,17,7,7,30,30,30,18,7,19,29,9,28,
+17,20,27,17,28,134,134,18,29,17,17,28,17,19,19,7,20,10,10,9,28,17,
+8,10,8,10,27,134,134,18,9,7,30,28,7,30,28,18,27,28,20,8,29,8,
+20,8,20,20,30,134,134,29,28,9,17,18,20,20,27,134,134,20,29,28,30,27,
+28,9,30,19,8,134,134,29,29,17,30,8,19,8,10,134,134,29,27,20,27,17,
+10,28,20,30,17,134,134,8,7,18,134,134,7,19,19,134,134,29,8,28,27,17,
+27,17,9,27,10,134,134,17,19,19,134,134,9,8,10,134,134,10,17,30,9,18,
+10,7,19,8,8,134,134,10,19,10,134,134,18,18,27,134,134,27,10,27,17,17,
+19,20,18,9,28,134,134,10,20,28,134,134,27,10,27,134,134,19,17,28,19,10,
+20,30,17,9,29,134,134,27,19,29,10,28,18,9,17,134,134,19,17,7,27,7,
+17,28,18,8,10,134,134,18,29,29,19,28,27,20,19,28,18,8,10,8,20,19,
+10,28,9,20,8,134,134,10,28,18,28,30,19,19,20,18,9,17,9,8,17,19,
+29,27,10,17,7,29,30,20,30,19,19,18,20,27,28,17,20,18,10,9,17,30
+</data>
+ </layer>
+ <layer id="2" name="walls" width="22" height="13">
+  <data encoding="csv">
+1,2,3,4,2,5,5,4,4,3,2,5,2,2,2,2,5,4,3,2,2,6,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,36,
+11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+31,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+41,5,44,42,42,42,45,43,42,43,44,44,45,44,42,43,45,42,44,45,45,46
+</data>
+ </layer>
+ <layer id="3" name="decor" width="22" height="13">
+  <data encoding="csv">
+0,0,0,185,0,0,161,0,0,0,0,0,0,0,0,0,161,0,0,185,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,157,60,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,69,2147483805,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,156,0,0,0,0,0,0,0,0,0,0,78,0,0,0,0,0,0,0,149,0,
+0,0,0,78,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,69,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,156,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,149,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2147483805,0,
+0,157,78,0,0,0,0,0,0,0,0,0,0,0,0,0,0,78,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="4" name="objects">
+  <object id="6" template="spike_permanent.tx" type="spike_trap" x="176" y="64">
+   <properties>
+    <property name="group" value="trap1"/>
+   </properties>
+  </object>
+  <object id="14" name="button_01" type="button" gid="269" x="208" y="192" width="16" height="16">
+   <properties>
+    <property name="hold" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="15" name="potion_hp_05" type="pickup" gid="197" x="47.5" y="78" width="16" height="16">
+   <properties>
+    <property name="amount" value="20"/>
+    <property name="kind" value="hp"/>
+   </properties>
+  </object>
+  <object id="16" name="potion_mp_05" type="pickup" gid="201" x="47.5" y="143" width="16" height="16">
+   <properties>
+    <property name="amount" type="int" value="20"/>
+    <property name="kind" value="mp"/>
+   </properties>
+  </object>
+  <object id="17" gid="173" x="192" y="48" width="16" height="16"/>
+  <object id="19" name="potion_hp_07" type="pickup" gid="197" x="302" y="158.5" width="16" height="16">
+   <properties>
+    <property name="amount" value="20"/>
+    <property name="kind" value="hp"/>
+   </properties>
+  </object>
+  <object id="21" name="potion_hp_06" type="pickup" gid="197" x="210" y="115.5" width="16" height="16">
+   <properties>
+    <property name="amount" value="20"/>
+    <property name="kind" value="hp"/>
+   </properties>
+  </object>
+  <object id="20" name="potion_mp_06" type="pickup" gid="201" x="288" y="46" width="16" height="16">
+   <properties>
+    <property name="amount" type="int" value="20"/>
+    <property name="kind" value="mp"/>
+   </properties>
+  </object>
+  <object id="22" name="spawn_enemy" x="147.5" y="86.5">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="23" name="spawn_enemy" x="124" y="145.5">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="24" name="spawn_enemy" x="303" y="87">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="25" name="spawn_enemy" x="223" y="83">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="26" name="spawn_enemy" x="197" y="178.5">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="27" name="spawn_enemy" x="70.5" y="40.5">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="28" name="spawn_enemy" x="66.5" y="182">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="29" name="spawn_enemy" x="294.5" y="182.5">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="30" name="collision" x="14.75" y="0.75" width="324.5" height="14"/>
+  <object id="31" name="collision" x="14.75" y="199.25" width="324.5" height="9.5"/>
+  <object id="32" name="collision" x="8.5" y="14.25" width="7.5" height="64.5"/>
+  <object id="33" name="collision" x="8.5" y="112.75" width="7" height="84.5"/>
+  <object id="34" name="collision" x="337.5" y="15.25" width="6.5" height="64.5"/>
+  <object id="35" name="collision" x="336.5" y="111.25" width="7.5" height="86.5"/>
+  <object id="36" name="collision" x="18.5" y="120.25" width="9" height="7.5"/>
+  <object id="37" name="collision" x="20" y="71.25" width="9" height="7.5"/>
+  <object id="38" name="collision" x="323" y="73.25" width="9" height="7.5"/>
+  <object id="39" name="collision" x="323" y="122.25" width="9" height="7.5"/>
+  <object id="40" name="door_west" x="0" y="80" width="16" height="32">
+   <properties>
+    <property name="direction" value="west"/>
+    <property name="locked_until_clear" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="41" name="door_east" x="336" y="80.25" width="16" height="30.5">
+   <properties>
+    <property name="direction" value="east"/>
+    <property name="locked_until_clear" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="42" name="pit_01" type="pit" x="80" y="16" width="32" height="176">
+   <properties>
+    <property name="damage" type="int" value="20"/>
+   </properties>
+  </object>
+  <object id="43" name="pit_02" type="pit" x="160" y="80" width="32" height="64">
+   <properties>
+    <property name="damage" type="int" value="20"/>
+   </properties>
+  </object>
+  <object id="44" name="pit_03" type="pit" x="240" y="48" width="32" height="112">
+   <properties>
+    <property name="damage" type="int" value="20"/>
+   </properties>
+  </object>
+  <object id="45" name="spawn_player" x="23" y="95.5">
+   <properties>
+    <property name="entry" value="west"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="46" name="button_02" type="button" gid="271" x="128" y="48" width="16" height="16">
+   <properties>
+    <property name="hold" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="47" template="spike_cycle.tx" type="spike_trap" x="128" y="192"/>
+  <object id="48" template="spike_permanent.tx" type="spike_trap" x="192" y="32"/>
+  <object id="49" template="spike_permanent.tx" type="spike_trap" x="208" y="32"/>
+  <object id="50" template="spike_permanent.tx" type="spike_trap" x="176" y="32"/>
+  <object id="51" template="spike_permanent.tx" type="spike_trap" x="208" y="48"/>
+  <object id="52" template="spike_permanent.tx" type="spike_trap" x="176" y="48"/>
+  <object id="53" template="spike_permanent.tx" type="spike_trap" x="192" y="64"/>
+  <object id="54" template="spike_permanent.tx" type="spike_trap" x="208" y="64"/>
+  <object id="55" template="spike_cycle.tx" type="spike_trap" x="160" y="160"/>
+  <object id="56" template="spike_cycle.tx" type="spike_trap" x="192" y="160"/>
+  <object id="57" template="spike_cycle.tx" type="spike_trap" x="224" y="176"/>
+  <object id="58" template="spike_cycle.tx" type="spike_trap" x="144" y="64"/>
+  <object id="59" template="spike_cycle.tx" type="spike_trap" x="144" y="48"/>
+  <object id="60" template="spike_cycle.tx" type="spike_trap" x="256" y="48"/>
+ </objectgroup>
+</map>

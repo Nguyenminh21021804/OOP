@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+ <tileset firstgid="1" source="item.tsx"/>
+ <object name="spike_permanent" type="spike_trap" gid="89" width="16" height="16">
+  <properties>
+   <property name="damage" type="int" value="5"/>
+   <property name="group" value="trap1"/>
+   <property name="mode" value="permanent"/>
+  </properties>
+ </object>
+</template>

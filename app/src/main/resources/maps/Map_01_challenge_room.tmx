@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="14" height="10" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="96">
+ <tileset firstgid="1" source="room_items.tsx"/>
+ <tileset firstgid="101" source="item.tsx"/>
+ <tileset firstgid="193" source="walls_decor.tsx"/>
+ <layer id="1" name="ground" width="14" height="10">
+  <data encoding="csv">
+28,20,10,17,10,30,9,29,18,18,20,10,18,29,
+27,18,19,18,18,19,17,30,28,20,19,10,28,9,
+30,29,7,8,9,10,17,8,18,8,29,7,17,19,
+7,18,28,8,8,18,20,7,20,28,19,19,8,30,
+9,29,28,17,19,29,19,30,17,29,19,9,8,27,
+28,28,29,30,18,27,10,18,19,29,27,30,28,8,
+19,7,29,20,30,17,30,29,19,8,28,19,8,8,
+10,19,10,9,29,7,29,18,20,28,30,29,29,29,
+28,28,18,30,19,28,17,10,7,19,28,29,17,27,
+27,29,20,9,7,19,27,18,27,28,10,27,9,7
+</data>
+ </layer>
+ <layer id="2" name="walls" width="14" height="10">
+  <data encoding="csv">
+1,5,3,4,5,4,3,2,4,4,3,3,5,6,
+11,0,0,0,0,190,0,0,0,0,0,0,0,36,
+11,0,0,0,0,0,0,0,0,0,0,0,0,36,
+11,0,0,0,0,0,0,0,0,0,0,0,0,26,
+11,0,0,0,0,0,0,0,0,0,0,0,0,36,
+11,0,0,0,0,0,0,0,0,0,0,0,0,16,
+31,0,0,0,0,0,0,0,0,0,0,0,0,16,
+11,0,0,0,0,0,0,0,0,0,0,0,0,36,
+1,0,0,0,0,0,0,0,0,0,0,0,0,16,
+41,42,44,44,43,45,0,0,43,45,44,42,44,46
+</data>
+ </layer>
+ <layer id="3" name="decor" width="14" height="10">
+  <data encoding="csv">
+0,0,0,113,0,205,0,0,0,0,113,0,0,0,
+0,0,0,0,0,229,0,0,0,0,0,69,0,0,
+0,0,78,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,109,0,0,0,0,0,0,0,0,0,0,2147483757,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="4" name="objects">
+  <object id="5" name="chest_05" type="chest" gid="173" x="16" y="32" width="16" height="16">
+   <properties>
+    <property name="loot" value="coin"/>
+   </properties>
+  </object>
+  <object id="7" name="potion_hp_10" type="pickup" gid="149" x="32" y="32" width="16" height="16">
+   <properties>
+    <property name="amount" value="20"/>
+    <property name="kind" value="hp"/>
+   </properties>
+  </object>
+  <object id="10" name="collision" x="9.75" y="1" width="204.833" height="14"/>
+  <object id="11" name="collision" x="9.91683" y="145.333" width="85.833" height="14"/>
+  <object id="14" name="collision" x="129.083" y="146" width="85.833" height="14"/>
+  <object id="15" name="collision" x="8.58333" y="16.0833" width="7.5" height="128.5"/>
+  <object id="16" name="collision" x="208.583" y="15.0833" width="7.5" height="130.833"/>
+  <object id="17" name="door_south" x="96" y="160" width="10.3333" height="33.3333" rotation="-90">
+   <properties>
+    <property name="direction" value="south"/>
+    <property name="locked_until_clear" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="18" template="fire_cycle.tx" type="fire_trap" x="176" y="33"/>
+  <object id="23" template="spike_cycle.tx" type="spike_trap" x="32" y="64"/>
+  <object id="24" template="spike_cycle.tx" type="spike_trap" x="192" y="48"/>
+  <object id="25" template="fire_cycle.tx" type="fire_trap" x="183.333" y="96" rotation="90"/>
+  <object id="31" template="spike_permanent.tx" type="spike_trap" x="49" y="32.5"/>
+  <object id="32" template="spike_permanent.tx" type="spike_trap" x="65" y="32.5"/>
+  <object id="33" template="spike_permanent.tx" type="spike_trap" x="65" y="32.5"/>
+  <object id="34" template="spike_permanent.tx" type="spike_trap" x="65" y="32.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="35" template="spike_permanent.tx" type="spike_trap" x="65" y="48.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="36" template="spike_permanent.tx" type="spike_trap" x="49" y="32.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="37" template="spike_permanent.tx" type="spike_trap" x="49" y="48.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="38" template="spike_permanent.tx" type="spike_trap" x="64" y="64">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="39" template="spike_permanent.tx" type="spike_trap" x="49" y="64.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="40" template="spike_permanent.tx" type="spike_trap" x="81" y="48.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="41" template="spike_permanent.tx" type="spike_trap" x="81" y="64.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="44" template="spike_permanent.tx" type="spike_trap" x="97" y="32.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="45" template="spike_permanent.tx" type="spike_trap" x="113" y="32.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="46" template="spike_permanent.tx" type="spike_trap" x="129" y="32.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="47" template="spike_permanent.tx" type="spike_trap" x="17" y="64.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="48" template="spike_permanent.tx" type="spike_trap" x="17" y="80.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="49" template="spike_permanent.tx" type="spike_trap" x="17" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="50" template="spike_permanent.tx" type="spike_trap" x="17" y="112.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="51" template="spike_permanent.tx" type="spike_trap" x="17" y="128.5"/>
+  <object id="52" template="spike_permanent.tx" type="spike_trap" x="17" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="54" template="spike_permanent.tx" type="spike_trap" x="17" y="144.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="55" template="spike_permanent.tx" type="spike_trap" x="33" y="144.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="56" template="spike_permanent.tx" type="spike_trap" x="33" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="57" template="spike_permanent.tx" type="spike_trap" x="33" y="112.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="58" template="spike_permanent.tx" type="spike_trap" x="33" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="59" template="spike_permanent.tx" type="spike_trap" x="49" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="60" template="spike_permanent.tx" type="spike_trap" x="49" y="112.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="61" template="spike_permanent.tx" type="spike_trap" x="49" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="62" template="spike_permanent.tx" type="spike_trap" x="49" y="144.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="63" template="spike_permanent.tx" type="spike_trap" x="65" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="64" template="spike_permanent.tx" type="spike_trap" x="81" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="65" template="spike_permanent.tx" type="spike_trap" x="97" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="66" template="spike_permanent.tx" type="spike_trap" x="113" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="67" template="spike_permanent.tx" type="spike_trap" x="129" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="68" template="spike_permanent.tx" type="spike_trap" x="145" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="69" template="spike_permanent.tx" type="spike_trap" x="161" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="70" template="spike_permanent.tx" type="spike_trap" x="81" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="71" template="spike_permanent.tx" type="spike_trap" x="97" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="72" template="spike_permanent.tx" type="spike_trap" x="113" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="73" template="spike_permanent.tx" type="spike_trap" x="129" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="74" template="spike_permanent.tx" type="spike_trap" x="145" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="75" template="spike_permanent.tx" type="spike_trap" x="161" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="76" template="spike_permanent.tx" type="spike_trap" x="177" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="77" template="spike_permanent.tx" type="spike_trap" x="193" y="128.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="78" template="spike_permanent.tx" type="spike_trap" x="193" y="144.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="79" template="spike_permanent.tx" type="spike_trap" x="161" y="144.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="80" template="spike_permanent.tx" type="spike_trap" x="177" y="144.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="81" template="spike_permanent.tx" type="spike_trap" x="145" y="144.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="82" template="spike_permanent.tx" type="spike_trap" x="129" y="144.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="84" template="spike_permanent.tx" type="spike_trap" x="193" y="96.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="85" template="spike_permanent.tx" type="spike_trap" x="113" y="80.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="86" template="spike_permanent.tx" type="spike_trap" x="129" y="80.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="87" template="spike_permanent.tx" type="spike_trap" x="145" y="80.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="88" template="spike_permanent.tx" type="spike_trap" x="161" y="80.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="89" template="spike_permanent.tx" type="spike_trap" x="176" y="64">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="90" template="spike_permanent.tx" type="spike_trap" x="161" y="64.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="91" template="spike_permanent.tx" type="spike_trap" x="145" y="64.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="92" template="spike_permanent.tx" type="spike_trap" x="129" y="64.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="93" template="spike_permanent.tx" type="spike_trap" x="113" y="64.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="94" template="spike_permanent.tx" type="spike_trap" x="177" y="48.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+  <object id="95" template="spike_permanent.tx" type="spike_trap" x="161" y="48.5">
+   <properties>
+    <property name="group" value="challenge_room"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>
