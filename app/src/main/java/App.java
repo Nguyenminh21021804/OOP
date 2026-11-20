@@ -1,7 +1,7 @@
 
 
+import screens.CreditsScreen;
 import screens.HowToPlayScreen;
-import screens.InfoScreen;
 import screens.SettingsScreen;
 import de.gurkenlabs.litiengine.Game;
 import screens.MainMenuScreen;
@@ -18,7 +18,7 @@ public class App {
         Game.screens().add(new MainMenuScreen());
         Game.screens().add(new SettingsScreen());
         Game.screens().add(new HowToPlayScreen());
-        Game.screens().add(new InfoScreen("CREDITS", "Credits"));
+        Game.screens().add(new CreditsScreen());
         Game.screens().display(MainMenuScreen.NAME);
 
         Game.start();
