@@ -1,4 +1,4 @@
-package entities;
+package entities.ranged;
 
 import de.gurkenlabs.litiengine.Direction;
 import de.gurkenlabs.litiengine.Game;

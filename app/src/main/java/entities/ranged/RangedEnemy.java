@@ -1,8 +1,10 @@
-package entities;
+package entities.ranged;
 
 import de.gurkenlabs.litiengine.Direction;
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
+import entities.Enemy;
+
 import java.awt.geom.Point2D;
 import java.util.Collection;
 

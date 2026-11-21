@@ -1,5 +1,7 @@
 package entities;
 
+import entities.melee.MeleeEnemy;
+
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;

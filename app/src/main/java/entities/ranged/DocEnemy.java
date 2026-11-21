@@ -1,8 +1,7 @@
-package entities;
+package entities.ranged;
 
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
-import java.awt.geom.Point2D;
 
 public class DocEnemy extends RangedEnemy {
 

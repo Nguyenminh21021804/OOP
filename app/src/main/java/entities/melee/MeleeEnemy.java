@@ -1,10 +1,13 @@
-package entities;
+package entities.melee;
 
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.entities.CollisionInfo;
 import de.gurkenlabs.litiengine.entities.EntityInfo;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import de.gurkenlabs.litiengine.util.geom.GeometricUtilities;
+import entities.Enemy;
+import entities.MonsterType;
+import entities.SpriteFlashVfx;
 import level.RoomData;
 
 import java.awt.geom.Point2D;

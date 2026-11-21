@@ -1,5 +1,7 @@
 package entities;
 
+import entities.melee.MeleeEnemy;
+
 /**
  * Tạo quái từ MonsterType. Chỗ duy nhất cần sửa khi thêm một loại quái mới.
  */
