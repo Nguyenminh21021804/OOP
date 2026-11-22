@@ -4,10 +4,10 @@
   <property name="Stage" type="int" value="1"/>
  </properties>
  <tileset firstgid="1" name="floor_traps" tilewidth="16" tileheight="16" tilecount="49" columns="7">
-  <image source="../0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7/atlas_floor-16x16.png" width="112" height="112"/>
+  <image source="../0x72_DungeonTilesetII_v1.7/atlas_floor-16x16.png" width="112" height="112"/>
  </tileset>
  <tileset firstgid="50" name="walls_decor" tilewidth="16" tileheight="16" tilecount="192" columns="24">
-  <image source="../0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7/atlas_walls_high-16x32.png" width="384" height="128"/>
+  <image source="../0x72_DungeonTilesetII_v1.7/atlas_walls_high-16x32.png" width="384" height="128"/>
   <tile id="11">
    <animation>
     <frame tileid="15" duration="100"/>
@@ -50,7 +50,7 @@
   </tile>
  </tileset>
  <tileset firstgid="242" name="room_frame" tilewidth="16" tileheight="16" tilecount="48" columns="12">
-  <image source="../0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7/atlas_walls_low-16x16.png" width="192" height="64"/>
+  <image source="../0x72_DungeonTilesetII_v1.7/atlas_walls_low-16x16.png" width="192" height="64"/>
  </tileset>
  <tileset firstgid="290" source="item.tsx"/>
  <layer id="4" name="ground" width="22" height="13">

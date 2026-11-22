@@ -1,24 +1,72 @@
-Tue Oct 20 17:18:13 GMT+07:00 2026 Main Update Loop threw an exception:
-java.lang.NullPointerException: Cannot invoke "java.awt.Font.deriveFont(float)" because the return value of "de.gurkenlabs.litiengine.resources.Fonts.get(String)" is null
-	at screens.InfoScreen.render(InfoScreen.java:49)
-	at de.gurkenlabs.litiengine.graphics.RenderComponent.renderScreen(RenderComponent.java:217)
-	at de.gurkenlabs.litiengine.graphics.RenderComponent.renderGraphics(RenderComponent.java:170)
-	at de.gurkenlabs.litiengine.graphics.RenderComponent.render(RenderComponent.java:148)
-	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:93)
-	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)
+Sun Nov 22 15:42:15 GMT+07:00 2026 AWT-EventQueue-0 threw an exception:
+de.gurkenlabs.litiengine.resources.ResourceLoadException: de.gurkenlabs.litiengine.environment.tilemap.xml.TmxException
+	at de.gurkenlabs.litiengine.resources.ResourcesContainer.loadResource(ResourcesContainer.java:445)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1735)
+	at de.gurkenlabs.litiengine.resources.ResourcesContainer.get(ResourcesContainer.java:284)
+	at de.gurkenlabs.litiengine.resources.ResourcesContainer.get(ResourcesContainer.java:202)
+	at de.gurkenlabs.litiengine.environment.GameWorld.getEnvironment(GameWorld.java:285)
+	at de.gurkenlabs.litiengine.environment.GameWorld.loadEnvironment(GameWorld.java:383)
+	at screens.MapViewerScreen.loadMap(MapViewerScreen.java:82)
+	at screens.MapViewerScreen.next(MapViewerScreen.java:73)
+	at screens.MapViewerScreen.lambda$new$0(MapViewerScreen.java:46)
+	at de.gurkenlabs.litiengine.input.Mouse.mouseClicked(Mouse.java:161)
+	at java.desktop/java.awt.Component.processMouseEvent(Component.java:6551)
+	at java.desktop/java.awt.Component.processEvent(Component.java:6313)
+	at java.desktop/java.awt.Component.dispatchEventImpl(Component.java:4930)
+	at java.desktop/java.awt.Component.dispatchEvent(Component.java:4770)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:700)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:677)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:203)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:124)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:113)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:109)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
+	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
+Caused by: de.gurkenlabs.litiengine.environment.tilemap.xml.TmxException
+	at de.gurkenlabs.litiengine.resources.Maps.load(Maps.java:120)
+	at de.gurkenlabs.litiengine.resources.Maps.load(Maps.java:33)
+	at de.gurkenlabs.litiengine.resources.ResourcesContainer.loadResource(ResourcesContainer.java:443)
+	... 21 more
+Caused by: jakarta.xml.bind.UnmarshalException
+ - with linked exception:
+[java.io.FileNotFoundException: D:\IDEA Java\OOP\Map_01 (The system cannot find the file specified)]
+	at org.glassfish.jaxb.runtime.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal0(UnmarshallerImpl.java:216)
+	at org.glassfish.jaxb.runtime.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal(UnmarshallerImpl.java:184)
+	at jakarta.xml.bind.helpers.AbstractUnmarshallerImpl.unmarshal(AbstractUnmarshallerImpl.java:152)
+	at jakarta.xml.bind.helpers.AbstractUnmarshallerImpl.unmarshal(AbstractUnmarshallerImpl.java:157)
+	at jakarta.xml.bind.helpers.AbstractUnmarshallerImpl.unmarshal(AbstractUnmarshallerImpl.java:167)
+	at de.gurkenlabs.litiengine.util.io.XmlUtilities.read(XmlUtilities.java:92)
+	at de.gurkenlabs.litiengine.resources.Maps.load(Maps.java:118)
+	... 23 more
+Caused by: java.io.FileNotFoundException: D:\IDEA Java\OOP\Map_01 (The system cannot find the file specified)
+	at java.base/java.io.FileInputStream.open0(Native Method)
+	at java.base/java.io.FileInputStream.open(FileInputStream.java:185)
+	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:139)
+	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:109)
+	at java.base/sun.net.www.protocol.file.FileURLConnection.connect(FileURLConnection.java:126)
+	at java.base/sun.net.www.protocol.file.FileURLConnection.getInputStream(FileURLConnection.java:231)
+	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLEntityManager.setupCurrentEntity(XMLEntityManager.java:665)
+	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLVersionDetector.determineDocVersion(XMLVersionDetector.java:150)
+	at java.xml/com.sun.org.apache.xerces.internal.parsers.XML11Configuration.parse(XML11Configuration.java:862)
+	at java.xml/com.sun.org.apache.xerces.internal.parsers.XML11Configuration.parse(XML11Configuration.java:826)
+	at java.xml/com.sun.org.apache.xerces.internal.parsers.XMLParser.parse(XMLParser.java:137)
+	at java.xml/com.sun.org.apache.xerces.internal.parsers.AbstractSAXParser.parse(AbstractSAXParser.java:1225)
+	at java.xml/com.sun.org.apache.xerces.internal.jaxp.SAXParserImpl$JAXPSAXParser.parse(SAXParserImpl.java:629)
+	at org.glassfish.jaxb.runtime.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal0(UnmarshallerImpl.java:213)
+	... 29 more
 
 ====Runtime Information====
-Operating System: Windows 10
+Operating System: Windows 11
 	Architecture: amd64
 	Version: 10.0
 Memory:
-	Max heap size: 4.0 GiB
-	Current heap size: 102.0 MiB
-	Heap used: 72.3 MiB
-	Free heap: 29.7 MiB
-Java Version: OpenJDK Runtime Environment 27+35-2325 
+	Max heap size: 1.9 GiB
+	Current heap size: 23.0 MiB
+	Heap used: 17.4 MiB
+	Free heap: 5.6 MiB
+Java Version: Java(TM) SE Runtime Environment 27+35-2325 
 	Vendor: Oracle Corporation
-Uptime: PT6.268S
+Uptime: PT10.444S
 Screens: 1
-	Screen 0: 2560x1440@60hz
+	Screen 0: 1920x1080@60hz
 

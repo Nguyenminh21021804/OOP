@@ -161,6 +161,9 @@
   <object id="59" name="spawn_enemy" x="305.139" y="164.678">
    <point/>
   </object>
+  <object id="60" x="137.555" y="261.064">
+   <point/>
+  </object>
   <object id="61" name="spike_permanent" gid="25" x="63.6667" y="63.6667" width="16" height="16"/>
   <object id="62" name="spike_permanent" gid="25" x="96.3333" y="63.6667" width="16" height="16"/>
   <object id="63" name="spike_permanent" gid="25" x="80" y="63.3333" width="16" height="16"/>
