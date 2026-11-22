@@ -91,7 +91,7 @@ public class MainMenuScreen extends GameScreen {
         super.render(g);
     }
 
-    private void onNewGame()   { System.out.println("New Game clicked"); }
+    private void onNewGame() { Game.screens().display(CharacterSelectScreen.NAME); }
     private void onSettings()  { Game.screens().display("SETTINGS"); }
     private void onHowToPlay() { Game.screens().display("HOWTOPLAY"); }
     private void onCredits()   { Game.screens().display("CREDITS"); }

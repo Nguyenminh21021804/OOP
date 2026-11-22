@@ -1,5 +1,6 @@
 
 
+import screens.CharacterSelectScreen;
 import screens.CreditsScreen;
 import screens.HowToPlayScreen;
 import screens.SettingsScreen;
@@ -16,6 +17,7 @@ public class App {
         Game.window().setResolution(Resolution.custom(1024, 576, "1024x576"));
 
         Game.screens().add(new MainMenuScreen());
+        Game.screens().add(new CharacterSelectScreen());
         Game.screens().add(new SettingsScreen());
         Game.screens().add(new HowToPlayScreen());
         Game.screens().add(new CreditsScreen());
