@@ -19,9 +19,21 @@ public class MainMenuScreen extends GameScreen {
     private PixelButton[] buttons;
     private TitleArt titleArt;
     private double lastW = -1, lastH = -1;
+    private long openedAt = 0; // <--- Thêm biến lưu thời điểm mở Menu
 
     public MainMenuScreen() {
         super(NAME);
+    }
+
+    @Override
+    public void prepare() { // <--- Thêm hàm này để ghi lại giờ mỗi khi quay về Menu
+        super.prepare();
+        openedAt = System.currentTimeMillis();
+    }
+
+    private boolean canHandleClick() { // <--- Thêm hàm kiểm tra chống click xuyên
+        return Game.screens().current() == this
+                && System.currentTimeMillis() - openedAt > 350;
     }
 
     @Override
@@ -38,7 +50,11 @@ public class MainMenuScreen extends GameScreen {
         for (int i = 0; i < LABELS.length; i++) {
             buttons[i] = new PixelButton(0, 0, LABELS[i]);
             final Runnable action = actions[i];
-            buttons[i].onClicked(e -> action.run());
+            buttons[i].onClicked(e -> { // <--- Bọc điều kiện ở ngay đây
+                if (canHandleClick()) {
+                    action.run();
+                }
+            });
             this.getComponents().add(buttons[i]);
         }
     }
@@ -64,7 +80,7 @@ public class MainMenuScreen extends GameScreen {
 
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-        MenuBackground.get().draw(g, v); // nền + lửa
+        MenuBackground.get().draw(g, v);
 
         AffineTransform old = g.getTransform();
         g.translate(0, v.offsetY);
@@ -72,10 +88,10 @@ public class MainMenuScreen extends GameScreen {
         titleArt.draw(g, (int) Math.round(v.w / v.k), (int) Math.round(v.h / v.k));
         g.setTransform(old);
 
-        super.render(g); // các nút
+        super.render(g);
     }
 
-    private void onNewGame()   { System.out.println("New Game clicked"); }
+    private void onNewGame() { Game.screens().display(CharacterSelectScreen.NAME); }
     private void onSettings()  { Game.screens().display("SETTINGS"); }
     private void onHowToPlay() { Game.screens().display("HOWTOPLAY"); }
     private void onCredits()   { Game.screens().display("CREDITS"); }

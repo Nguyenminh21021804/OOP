@@ -1,24 +1,26 @@
-Tue Oct 20 17:18:13 GMT+07:00 2026 Main Update Loop threw an exception:
-java.lang.NullPointerException: Cannot invoke "java.awt.Font.deriveFont(float)" because the return value of "de.gurkenlabs.litiengine.resources.Fonts.get(String)" is null
-	at screens.InfoScreen.render(InfoScreen.java:49)
-	at de.gurkenlabs.litiengine.graphics.RenderComponent.renderScreen(RenderComponent.java:217)
-	at de.gurkenlabs.litiengine.graphics.RenderComponent.renderGraphics(RenderComponent.java:170)
-	at de.gurkenlabs.litiengine.graphics.RenderComponent.render(RenderComponent.java:148)
-	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:93)
-	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)
+Sun Nov 22 16:47:56 GMT+07:00 2026 main threw an exception:
+java.lang.NullPointerException: Cannot store to object array because "this.weaponImgs" is null
+	at screens.CharacterSelectScreen.loadSprites(CharacterSelectScreen.java:160)
+	at screens.CharacterSelectScreen.initializeComponents(CharacterSelectScreen.java:89)
+	at de.gurkenlabs.litiengine.gui.GuiComponent.<init>(GuiComponent.java:186)
+	at de.gurkenlabs.litiengine.gui.GuiComponent.<init>(GuiComponent.java:121)
+	at de.gurkenlabs.litiengine.gui.screens.Screen.<init>(Screen.java:14)
+	at de.gurkenlabs.litiengine.gui.screens.GameScreen.<init>(GameScreen.java:18)
+	at screens.CharacterSelectScreen.<init>(CharacterSelectScreen.java:84)
+	at App.main(App.java:20)
 
 ====Runtime Information====
-Operating System: Windows 10
+Operating System: Windows 11
 	Architecture: amd64
 	Version: 10.0
 Memory:
-	Max heap size: 4.0 GiB
-	Current heap size: 102.0 MiB
-	Heap used: 72.3 MiB
-	Free heap: 29.7 MiB
-Java Version: OpenJDK Runtime Environment 27+35-2325 
+	Max heap size: 3.9 GiB
+	Current heap size: 18.0 MiB
+	Heap used: 8.6 MiB
+	Free heap: 9.4 MiB
+Java Version: Java(TM) SE Runtime Environment 27+35-2325 
 	Vendor: Oracle Corporation
-Uptime: PT6.268S
+Uptime: PT0.532S
 Screens: 1
-	Screen 0: 2560x1440@60hz
+	Screen 0: 1920x1080@165hz
 
