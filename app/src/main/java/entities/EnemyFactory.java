@@ -4,6 +4,7 @@ import entities.melee.MeleeEnemy;
 import entities.ranged.*;
 import entities.ranged.SkeletonEnemy;
 
+
 /**
  * Tạo quái từ MonsterType. Chỗ duy nhất cần sửa khi thêm một loại quái mới.
  */
