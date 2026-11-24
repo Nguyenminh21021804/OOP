@@ -19,6 +19,9 @@ import de.gurkenlabs.litiengine.graphics.Spritesheet;
 import de.gurkenlabs.litiengine.resources.Resources;
 import entities.ranged.*;
 
+import static entities.Enemy.TEAM_ENEMY;
+import static entities.Enemy.TEAM_PLAYER;
+
 /**
  * GamePlayScreen — Màn hình đấu trường thử nghiệm (Battle Test Arena).
  * Có một Bia tập bắn (TrainingDummy) đứng yên ở giữa.
@@ -87,7 +90,7 @@ public class GamePlayScreen extends GameScreen {
         // 2. Tạo Người Chơi (Player) điều khiển bằng WASD / Mũi tên để quan sát (Team 2)
         player = new Creature("doc");
         player.setLocation(100, 480);
-        player.setTeam(2);
+        player.setTeam(TEAM_PLAYER);
         player.setVelocity(120f);
         player.getHitPoints().setMax(300);
         player.getHitPoints().setValue(300);
@@ -149,6 +152,12 @@ public class GamePlayScreen extends GameScreen {
         LizardEnemy lizard = new LizardEnemy();
         lizard.setLocation(640, rowY);
         environment.add(lizard);
+
+        // TẠM (xóa sau khi thử xong): quái chỉ phát hiện khi dummy ở rất gần, để thấy chúng đi tuần
+        for (Enemy e : new Enemy[] {iceZombie, imp, doc, shaman, lizard}) {
+            e.setDetectionRange(40);
+            e.setHearingRange(0);
+        }
     }
 
     /**
@@ -159,7 +168,7 @@ public class GamePlayScreen extends GameScreen {
 
         // Xóa quái cũ an toàn tránh ConcurrentModificationException
         for (var entity : new java.util.ArrayList<>(environment.getCombatEntities())) {
-            if (entity != dummy && entity != player && entity.getTeam() == 2) {
+            if (entity != dummy && entity != player && entity.getTeam() == TEAM_ENEMY) {
                 entity.die();
                 environment.remove(entity);
             }

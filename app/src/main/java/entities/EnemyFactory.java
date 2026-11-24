@@ -1,6 +1,8 @@
 package entities;
 
 import entities.melee.MeleeEnemy;
+import entities.ranged.*;
+import entities.ranged.SkeletonEnemy;
 
 /**
  * Tạo quái từ MonsterType. Chỗ duy nhất cần sửa khi thêm một loại quái mới.
@@ -20,6 +22,32 @@ public final class EnemyFactory {
         } catch (IllegalArgumentException e) {
             System.err.println("[EnemyFactory] Ten quai khong hop le: '" + name + "', dung " + fallback);
             return fallback;
+        }
+    }
+
+    /** Tạo quái theo loại: cận chiến hoặc đánh xa (boss chưa có). */
+    public static Enemy create(MonsterType type, boolean elite) {
+        switch (type.getRole()) {
+            case MELEE:
+                return createMelee(type, elite);
+            case RANGED:
+                return createRanged(type);
+            default:
+                throw new UnsupportedOperationException(type + " (" + type.getRole() + ") chưa được cài đặt");
+        }
+    }
+
+    public static RangedEnemy createRanged(MonsterType type) {
+        switch (type) {
+            case DOC:         return new DocEnemy();
+            case ICE_ZOMBIE:  return new IceZombieEnemy();
+            case IMP:         return new ImpEnemy();
+            case LIZARD:      return new LizardEnemy();
+            case NECROMANCER: return new NecromancerEnemy();
+            case ORC_SHAMAN:  return new ShamanEnemy();
+            case SKELET:      return new SkeletonEnemy();
+            default:
+                throw new UnsupportedOperationException(type + " chưa có lớp quái đánh xa");
         }
     }
 

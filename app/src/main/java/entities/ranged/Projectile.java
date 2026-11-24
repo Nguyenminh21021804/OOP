@@ -14,6 +14,8 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.function.Consumer;
 
+import static entities.Enemy.TEAM_ENEMY;
+
 public class Projectile extends Creature implements IUpdateable, IRenderable {
 
     private final int damage;
@@ -101,7 +103,7 @@ public class Projectile extends Creature implements IUpdateable, IRenderable {
         this.setScaling(false);
         this.setIndestructible(true);
         this.setCollision(false); // Không bị kẹt bởi địa hình
-        this.setTeam(2);          // Cùng team với quái để không bị xô đẩy hoặc nhắm trúng
+        this.setTeam(TEAM_ENEMY);          // Cùng team với quái để không bị xô đẩy hoặc nhắm trúng
 
         // Tắt animation mặc định không xoay của Creature để render tự vẽ xoay trong render()
         if (this.animations() != null) {

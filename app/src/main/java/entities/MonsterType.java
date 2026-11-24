@@ -25,8 +25,7 @@ public enum MonsterType {
     //          prefix         phe              vai          hp  dmg spd  tầm  phátHiện hồiChiêu windup strike recover lunge
     ORC_WARRIOR("orc_warrior", Faction.ORCS,    Role.MELEE,   30,  5, 60f,  28, 160, 1200, 400, 120, 300, 10),
     MASKED_ORC ("masked_orc",  Faction.ORCS,    Role.MELEE,   45,  8, 32f,  34, 150, 1800, 600, 150, 500,  0),
-    GOBLIN     ("goblin",      Faction.ORCS,    Role.RANGED,  14,  3, 50f, 140, 200, 1400, 300,   0,   0,  0),
-    ORC_SHAMAN ("orc_shaman",  Faction.ORCS,    Role.RANGED,  20,  7, 28f, 180, 220, 2200, 700,   0,   0,  0),
+    ORC_SHAMAN ("orc-shaman",  Faction.ORCS,     Role.RANGED, 140, 16,  95f, 380, 550, 1500, 120, 0, 260, 0),
     OGRE       ("ogre",        Faction.ORCS,    Role.BOSS,   300, 15, 28f,  44, 260, 2000, 700, 150, 700,  0),
 
     // ------------------------------------------------------------------
@@ -34,8 +33,8 @@ public enum MonsterType {
     // ------------------------------------------------------------------
     ZOMBIE     ("zombie",      Faction.UNDEADS, Role.MELEE,   50,  6, 22f,  26, 140, 1500, 550, 120, 450,  0),
     TINY_ZOMBIE("tiny_zombie", Faction.UNDEADS, Role.MELEE,   12,  3, 60f,  20, 180,  900, 250, 100, 200, 12),
-    SKELET     ("skelet",      Faction.UNDEADS, Role.RANGED,  18,  4, 35f, 170, 220, 1500, 350,   0,   0,  0),
-    ICE_ZOMBIE ("ice_zombie",  Faction.UNDEADS, Role.RANGED,  28,  4, 25f, 150, 200, 2000, 500,   0,   0,  0),
+    SKELET     ("skelet",      Faction.UNDEADS,  Role.RANGED, 100, 14,  50f, 250, 450, 1500, 120, 0, 260, 0),
+    ICE_ZOMBIE ("ice_zombie",  Faction.UNDEADS,  Role.RANGED, 150, 15,  90f, 380, 550, 1400, 150, 0, 320, 0),
     BIG_ZOMBIE ("big_zombie",  Faction.UNDEADS, Role.BOSS,   280, 12, 24f,  44, 260, 2000, 700, 150, 700,  0),
 
     // ------------------------------------------------------------------
@@ -43,17 +42,22 @@ public enum MonsterType {
     // ------------------------------------------------------------------
     CHORT      ("chort",       Faction.DEMONS,  Role.MELEE,   35,  8, 40f,  30, 170, 1400, 300, 120, 400, 16),
     WOGOL      ("wogol",       Faction.DEMONS,  Role.MELEE,   22,  4, 55f,  24, 170,  700, 200, 100, 150,  6),
-    IMP        ("imp",         Faction.DEMONS,  Role.RANGED,  10,  3, 60f, 130, 200,  900, 250,   0,   0,  0),
-    NECROMANCER("necromancer", Faction.DEMONS,  Role.RANGED,  24,  6, 30f, 200, 240, 2500, 700,   0,   0,  0),
-    BIG_DEMON  ("big_demon",   Faction.DEMONS,  Role.BOSS,   260, 14, 34f,  44, 260, 1800, 600, 150, 600,  0);
-
+    IMP        ("imp",         Faction.DEMONS,   Role.RANGED,  60,  8, 140f, 350, 500,  600,  80, 0, 200, 0),
+    NECROMANCER("necromancer", Faction.DEMONS,   Role.RANGED, 100, 18,  45f, 280, 500, 2500, 140, 0, 300, 0),
+    BIG_DEMON  ("big_demon",   Faction.DEMONS,  Role.BOSS,   260, 14, 34f,  44, 260, 1800, 600, 150, 600,  0),
+    // ------------------------------------------------------------------
+    //  NEUTRAL
+    // ------------------------------------------------------------------
+    DOC        ("doc",         Faction.NEUTRAL,  Role.RANGED,  90, 12, 125f, 320, 450,  900, 100, 0, 240, 0),
+    LIZARD     ("lizard-f",    Faction.NEUTRAL,  Role.RANGED, 110, 18, 120f, 400, 550, 1000,   0, 0,   0, 0);
     // ==================================================================
 
     /** Phe của quái, kèm màu chủ đạo dùng cho hiệu ứng (nháy, vệt chém, hạt). */
     public enum Faction {
         ORCS(new Color(255, 230, 140)),     // trắng vàng, bụi
         UNDEADS(new Color(110, 200, 220)),  // xanh lơ
-        DEMONS(new Color(255, 110, 50));    // đỏ cam, lửa
+        DEMONS(new Color(255, 110, 50)),    // đỏ cam, lửa
+        NEUTRAL(new Color(200, 235, 170));   // quái ngoài ba phe (doc, lizard), màu hiệu ứng xanh nhạt
 
         private final Color effectColor;
 
@@ -74,7 +78,8 @@ public enum MonsterType {
     public enum Size {
         SMALL(16, 16, 10, 6),    // imp, goblin, skelet, các loại zombie nhỏ
         TALL(16, 23, 10, 8),     // orc, chort, wogol, necromancer
-        BIG(32, 36, 22, 12);     // ogre, big_zombie, big_demon
+        BIG(32, 36, 22, 12),     // ogre, big_zombie, big_demon
+        HERO(16, 28, 10, 8);     // lizard
 
         public final int spriteW;
         public final int spriteH;
@@ -129,6 +134,30 @@ public enum MonsterType {
         public Profile flank() {
             this.flank = true;
             return this;
+        }
+    }
+
+    /** Thông số riêng của quái đánh xa (đơn vị đấu trường hiện tại). */
+    public static final class RangedProfile {
+        public final double safeDistance;      // lùi ra nếu mục tiêu lại gần hơn khoảng này
+        public final double projectileSpeed;   // tốc độ đạn (px/giây)
+
+        public RangedProfile(double safeDistance, double projectileSpeed) {
+            this.safeDistance = safeDistance;
+            this.projectileSpeed = projectileSpeed;
+        }
+    }
+
+    public RangedProfile getRangedProfile() {
+        switch (this) {
+            case DOC:         return new RangedProfile(100, 140);
+            case ICE_ZOMBIE:  return new RangedProfile(100, 120);
+            case IMP:         return new RangedProfile(100, 150);
+            case LIZARD:      return new RangedProfile(100, 140);
+            case NECROMANCER: return new RangedProfile(180, 130);
+            case ORC_SHAMAN:  return new RangedProfile(100, 130);
+            case SKELET:      return new RangedProfile(90, 180);
+            default:          return new RangedProfile(100, 140);
         }
     }
 
@@ -243,10 +272,12 @@ public enum MonsterType {
     /** [GĐ5] Cỡ sprite theo kích thước frame trong tileset 0x72. */
     public Size getSize() {
         switch (this) {
-            case IMP: case GOBLIN: case SKELET: case ZOMBIE: case TINY_ZOMBIE: case ICE_ZOMBIE:
+            case IMP: case SKELET: case ZOMBIE: case TINY_ZOMBIE: case ICE_ZOMBIE:
                 return Size.SMALL;
             case OGRE: case BIG_ZOMBIE: case BIG_DEMON:
                 return Size.BIG;
+            case LIZARD:
+                return Size.HERO;
             default:
                 return Size.TALL;
         }

@@ -1,6 +1,7 @@
 package entities.ranged;
 
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
+import entities.MonsterType;
 
 /**
  * SkeletonEnemy — Bộ xương cung thủ/xạ thủ.
@@ -9,19 +10,7 @@ import de.gurkenlabs.litiengine.entities.ICombatEntity;
 public class SkeletonEnemy extends RangedEnemy {
 
     public SkeletonEnemy() {
-        super(
-            "skelet",       // spritePrefix trong game.litidata
-            100,            // maxHealth
-            14,             // damage
-            50f,            // speed — 50 pixel/giây (bước đi vừa phải)
-            250,            // attackRange
-            450,            // detectionRange
-            1500,           // cooldownMs (1.5s)
-            90,             // safeDistance
-            180             // projectileSpeed — mũi tên bay vừa phải
-        );
-        this.attackWindupMs = 120;    // Dừng lại giương tên 120ms
-        this.attackPauseTotalMs = 260; // Tổng thời gian khựng lại: 260ms
+        super(MonsterType.SKELET);
     }
 
     /**
@@ -37,7 +26,7 @@ public class SkeletonEnemy extends RangedEnemy {
                 target.getCenter(),
                 this.getProjectileSpeed(),
                 this.getDamage(),
-                1,
+                TEAM_PLAYER,
                 null
         );
     }

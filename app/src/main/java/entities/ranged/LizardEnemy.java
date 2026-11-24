@@ -9,6 +9,7 @@ import de.gurkenlabs.litiengine.graphics.ImageRenderer;
 import de.gurkenlabs.litiengine.graphics.Spritesheet;
 import de.gurkenlabs.litiengine.graphics.animation.Animation;
 import de.gurkenlabs.litiengine.resources.Resources;
+import entities.MonsterType;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
@@ -53,21 +54,7 @@ public class LizardEnemy extends RangedEnemy implements IRenderable {
     private Spritesheet arrowSpritesheet;
 
     public LizardEnemy() {
-        super(
-            "lizard-f",     // spritePrefix trong game.litidata (lizard-f-idle, lizard-f-walk, lizard-f-hit)
-            110,            // maxHealth
-            18,             // damage mũi tên
-            120f,           // speed — 120 pixel/giây (di chuyển nhanh nhẹn, linh hoạt)
-            400,            // attackRange — tầm bắn cung xa 400px
-            550,            // detectionRange
-            1000,           // cooldownMs (1.0s)
-            100,            // safeDistance — giữ cự ly
-            140             // projectileSpeed — mũi tên bay chậm rãi, thấy rõ đường đạn (140 px/s)
-        );
-
-        // Khớp thời gian khựng lại với chu trình bắn cung 310ms
-        this.attackWindupMs = 0;
-        this.attackPauseTotalMs = DRAW_DURATION + RECOIL_DURATION;
+        super(MonsterType.LIZARD);
 
         // Đăng ký quy tắc hoạt họa di chuyển walk và đứng idle rõ ràng
         initAnimations();
@@ -211,7 +198,7 @@ public class LizardEnemy extends RangedEnemy implements IRenderable {
                 target.getCenter(),        // vị trí mục tiêu
                 this.getProjectileSpeed(), // 190 px/s
                 this.getDamage(),          // sát thương
-                1,                         // đội nhận sát thương (Player / Dummy)
+                TEAM_PLAYER,                         // đội nhận sát thương (Player / Dummy)
                 null                       // sát thương vật lý
         );
     }

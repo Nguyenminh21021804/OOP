@@ -2,10 +2,11 @@ package entities.ranged;
 
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
+import entities.Enemy;
+import entities.MonsterType;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -30,18 +31,7 @@ public class NecromancerEnemy extends RangedEnemy {
      * - Khoảng cách an toàn: 180, Tốc độ đạn: 200
      */
     public NecromancerEnemy() {
-        super("necromancer",
-                100,    // maxHealth — máu tối đa (thấp vì đứng xa)
-                18,     // damage — sát thương mỗi đạn tối
-                45f,    // speed — 45 pixel/giây (bước đi chậm rãi)
-                280,    // attackRange — tầm tấn công (xa)
-                500,    // detectionRange — tầm phát hiện (rất xa)
-                2500,   // cooldownMs — hồi chiêu tấn công (ms)
-                180,    // safeDistance — khoảng cách an toàn (giữ xa)
-                130     // projectileSpeed — tốc độ đạn tối bay chậm rãi bám đuổi
-        );
-        this.attackWindupMs = 140;    // Niệm đạn tối 140ms
-        this.attackPauseTotalMs = 300; // Tổng thời gian khựng lại: 300ms
+        super(MonsterType.NECROMANCER);
     }
 
     /**
@@ -195,13 +185,7 @@ public class NecromancerEnemy extends RangedEnemy {
      * Sử dụng Iterator để tránh ConcurrentModificationException.
      */
     private void cleanUpDeadMinions() {
-        Iterator<SkeletonEnemy> iterator = summonedMinions.iterator();
-        while (iterator.hasNext()) {
-            SkeletonEnemy minion = iterator.next();
-            if (minion.isDead()) {
-                iterator.remove();
-            }
-        }
+        summonedMinions.removeIf(Enemy::isDead);
     }
 
     /**

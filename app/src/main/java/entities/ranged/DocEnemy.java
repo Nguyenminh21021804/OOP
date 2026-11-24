@@ -2,24 +2,12 @@ package entities.ranged;
 
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
+import entities.MonsterType;
 
 public class DocEnemy extends RangedEnemy {
 
     public DocEnemy() {
-        super(
-            "doc",          // spritePrefix trong game.litidata (doc-idle, doc-walk)
-            90,             // maxHealth
-            12,             // damage mỗi dao găm
-            125f,           // speed — 125 pixel/giây (di chuyển nhanh nhẹn)
-            320,            // attackRange — tầm ném dao xa 320px
-            450,            // detectionRange — tầm phát hiện
-            900,            // cooldownMs — hồi chiêu phóng dao
-            100,            // safeDistance — khoảng cách an toàn
-            140             // projectileSpeed — dao bay chậm rãi, dễ quan sát (140 px/s)
-        );
-        // Cấu hình thời gian khựng lại khi phóng dao
-        this.attackWindupMs = 100;    // Lấy đà ném dao 100ms
-        this.attackPauseTotalMs = 240; // Khựng lại 240ms rồi tiếp tục di chuyển
+        super(MonsterType.DOC);
     }
 
     /**
@@ -32,10 +20,6 @@ public class DocEnemy extends RangedEnemy {
         if (isAttacking) {
             super.updateAI();
             return;
-        }
-
-        if (target == null || target.isDead()) {
-            findTarget();
         }
 
         if (target == null) {
@@ -82,7 +66,7 @@ public class DocEnemy extends RangedEnemy {
                 target.getCenter(),        // vị trí mục tiêu
                 this.getProjectileSpeed(), // tốc độ bay
                 this.getDamage(),          // sát thương
-                1,                         // mục tiêu Player
+                TEAM_PLAYER,                         // mục tiêu Player
                 null                       // sát thương vật lý
         );
     }

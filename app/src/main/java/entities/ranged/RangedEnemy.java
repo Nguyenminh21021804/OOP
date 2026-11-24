@@ -1,12 +1,11 @@
 package entities.ranged;
 
-import de.gurkenlabs.litiengine.Direction;
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import entities.Enemy;
+import entities.MonsterType;
 
 import java.awt.geom.Point2D;
-import java.util.Collection;
 
 /**
  * RangedEnemy — Lớp trừu tượng trung gian cho tất cả kẻ địch tấn công từ xa.
@@ -37,6 +36,13 @@ public abstract class RangedEnemy extends Enemy {
     protected long attackPauseTotalMs = 260; // Tổng thời gian khựng lại đứng yên (ms)
     protected boolean hasFiredInCurrentAttack = false;
 
+    /**
+     * Hệ số đổi các chỉ số trong MonsterType (đơn vị đấu trường 1024x576) sang đơn vị của màn đang chạy.
+     * Giữ 1.0 khi chạy ở đấu trường. Khi chuyển sang Map_01 (352x208), đặt DISTANCE_SCALE = 0.35 và SPEED_SCALE = 0.5.
+     */
+    public static double DISTANCE_SCALE = 1.0;
+    public static double SPEED_SCALE = 1.0;
+
     public RangedEnemy(String spritePrefix, int maxHealth, int damage, float speed,
                        double attackRange, double detectionRange, long cooldownMs,
                        double safeDistance, double projectileSpeed) {
@@ -49,6 +55,22 @@ public abstract class RangedEnemy extends Enemy {
         this.lastStrafeSwitchTime = (long) (Math.random() * 1000);
     }
 
+    /** Tạo quái đánh xa từ một dòng trong MonsterType. */
+    protected RangedEnemy(MonsterType type) {
+        this(type.getSpritePrefix(), type.getMaxHealth(), type.getDamage(),
+                (float) (type.getSpeed() * SPEED_SCALE),
+                type.getAttackRange() * DISTANCE_SCALE, type.getDetectionRange() * DISTANCE_SCALE,
+                type.getCooldownMs(),
+                type.getRangedProfile().safeDistance * DISTANCE_SCALE,
+                type.getRangedProfile().projectileSpeed * SPEED_SCALE);
+        setType(type);
+        this.attackWindupMs = type.getWindupMs();
+        this.attackPauseTotalMs = type.getRecoverMs();
+        MonsterType.Size size = type.getSize();
+        setSize(size.spriteW, size.spriteH);
+        setFootprint(size.footW, size.footH);
+    }
+
     /**
      * Không cho phép kích hoạt đòn đánh mới nếu đang trong trạng thái khựng lại ngắm bắn.
      */
@@ -58,14 +80,6 @@ public abstract class RangedEnemy extends Enemy {
             return false;
         }
         return super.canAttack();
-    }
-
-    /**
-     * Không đổi mục tiêu giữa chừng khi đang trong nhịp khựng lại ngắm bắn.
-     */
-    @Override
-    protected boolean canRetarget() {
-        return !isAttacking;
     }
 
     /**
@@ -81,13 +95,9 @@ public abstract class RangedEnemy extends Enemy {
      */
     protected void faceTarget(ICombatEntity target) {
         if (target == null) return;
-        double dx = target.getCenter().getX() - this.getCenter().getX();
-        if (dx < -1.0) {
-            this.setFacingDirection(Direction.LEFT);
-            this.faceHorizontal(true);
-        } else if (dx > 1.0) {
-            this.setFacingDirection(Direction.RIGHT);
-            this.faceHorizontal(false);
+        double dx = target.getCenter().getX() - getCenter().getX();
+        if (Math.abs(dx) > 1.0) {
+            faceHorizontal(dx < 0);
         }
     }
 
@@ -95,33 +105,15 @@ public abstract class RangedEnemy extends Enemy {
      * Xoay mặt (hướng nhìn) theo hướng di chuyển (Trái / Phải) khi bước đi.
      */
     protected void faceMovement(double dx) {
-        if (dx < -0.1) {
-            this.setFacingDirection(Direction.LEFT);
-            this.faceHorizontal(true);
-        } else if (dx > 0.1) {
-            this.setFacingDirection(Direction.RIGHT);
-            this.faceHorizontal(false);
+        if (Math.abs(dx) > 0.1) {
+            faceHorizontal(dx < 0);
         }
     }
 
-    /**
-     * Tìm mục tiêu — lấy thực thể chiến đấu đầu tiên thuộc đội 1 (người chơi / bia tập)
-     * từ danh sách các combat entity trong môi trường hiện tại.
-     */
-    protected void findTarget() {
-        if (Game.world().environment() == null) return;
-
-        Collection<ICombatEntity> entities = Game.world().environment().getCombatEntities();
-        if (entities == null) return;
-
-        for (ICombatEntity entity : entities) {
-            // Đội 1 = người chơi / bia tập bắn
-            if (entity.getTeam() == 1 && !entity.isDead()) {
-                this.target = entity;
-                return;
-            }
-        }
-        this.target = null;
+    /** Không đổi mục tiêu giữa lúc đang khựng lại tung đòn (cơ chế nhận biết của Enemy sẽ chờ tới khi xong). */
+    @Override
+    protected boolean canRetarget() {
+        return !isAttacking;
     }
 
     /**
@@ -162,11 +154,6 @@ public abstract class RangedEnemy extends Enemy {
             return; // ĐỨNG YÊN TUYỆT ĐỐI (KHỰNG LẠI), KHÔNG DI CHUYỂN!
         }
 
-        // Bước 1: Tìm mục tiêu
-        if (target == null || target.isDead()) {
-            findTarget();
-        }
-
         if (target == null) {
             return;
         }
@@ -195,7 +182,7 @@ public abstract class RangedEnemy extends Enemy {
         }
         // Bước 5: Quá xa hoặc bị tường chắn mất tầm nhìn → tiến lại gần (moveTowards tự quay mặt theo hướng di chuyển)
         else if (distance > attackRange || !hasAttackLine()) {
-            moveTowards(target.getCenter());
+            chaseStep();
         }
         // Bước 6: Trong tầm bắn lý tưởng → Di chuyển qua lại trái - phải (quay mặt theo hướng lướt)
         else {

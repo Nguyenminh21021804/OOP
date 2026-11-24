@@ -7,6 +7,8 @@ import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import de.gurkenlabs.litiengine.util.geom.GeometricUtilities;
 import de.gurkenlabs.litiengine.graphics.animation.Animation;
 import de.gurkenlabs.litiengine.resources.Resources;
+import de.gurkenlabs.litiengine.Direction;
+import java.util.concurrent.ThreadLocalRandom;
 import level.PathField;
 import level.RoomData;
 
@@ -23,6 +25,10 @@ import java.util.Map;
  * - Người 2: Kế thừa để làm quái đánh xa (RangedEnemy)
  */
 public abstract class Enemy extends Creature implements IUpdateable {
+
+    public static final int TEAM_PLAYER = 1;   // người chơi và mọi thứ cùng phe (TrainingDummy, đồng minh)
+    public static final int TEAM_ENEMY = 2;    // quái vật và đạn của quái
+
     // Sát thương gây ra cho người chơi
     protected int damage;
 
@@ -82,6 +88,14 @@ public abstract class Enemy extends Creature implements IUpdateable {
     private final Map<String, Animation> actionAnimations = new HashMap<>();
 
     private final String spriteName;   // [GĐ11] tên sprite (có hậu tố _elite với quái elite), dùng để tìm sheet hành động
+
+    // [GĐ10] Hành vi lúc chờ
+    private Point2D idleSpot;                  // điểm đang đi tới (tâm chân), null nếu đang đứng
+    private long idleNextActionAt = 0;         // lúc được làm hành động tiếp theo
+    private long idleSpotDeadline = 0;         // quá hạn này mà chưa tới thì bỏ (phòng kẹt vật cản)
+    private double patrolRadius = 56;                    // "lãnh thổ": bán kính quanh nhà mà quái đi tuần (pixel)
+    private static final double PATROL_MIN_STEP = 18;    // mỗi chặng tuần tra cách nhà tối thiểu bấy nhiêu pixel
+    private static final double PATROL_SPEED_SCALE = 0.5;
 
     // =====================================================================
     //  Tìm mục tiêu
@@ -145,9 +159,29 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
     protected void faceHorizontal(boolean left) {
         facingLeft = left;
+        setFacingDirection(left ? Direction.LEFT : Direction.RIGHT);   // thêm dòng này
         Point2D me = getCenter();
         Point2D ahead = new Point2D.Double(me.getX() + (left ? -10 : 10), me.getY());
         setAngle(GeometricUtilities.calcRotationAngleInDegrees(me, ahead));
+    }
+
+    public boolean isFacingLeft() {
+        return facingLeft;
+    }
+
+    public void setPatrolRadius(double patrolRadius) { this.patrolRadius = patrolRadius; }
+
+    /** Ngừng đi tuần ngay (dùng khi quái chuyển sang trạng thái khác). */
+    protected void stopPatrol() {
+        idleSpot = null;
+    }
+
+    /**
+     * Lớp con có máy trạng thái riêng cho lúc chờ (như quái cận chiến) thì ghi đè trả về false.
+     * Mặc định true: khi chưa có mục tiêu, Enemy.update() tự cho quái đi tuần quanh nhà.
+     */
+    protected boolean usesBaseIdlePatrol() {
+        return true;
     }
 
     // =====================================================================
@@ -231,6 +265,66 @@ public abstract class Enemy extends Creature implements IUpdateable {
         lastDustTime = now;
         Point2D f = feetCenter();
         EnemyFx.dust(f.getX(), f.getY() + footHeight / 2.0, dirX, dirY);
+    }
+
+    /** Tuần tra lãnh thổ quanh nhà: đi tới một điểm trong bán kính, đứng nghỉ, rồi chọn điểm khác. */
+    protected void idleBehavior(long now) {
+        RoomData room = RoomData.current();   // có thể null (đấu trường chưa có RoomData): coi như không có tường
+        if (home == null || patrolRadius <= 0) {
+            return;
+        }
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        if (idleNextActionAt == 0) {
+            idleNextActionAt = now + 500 + r.nextInt(1500);   // chặng đầu tiên bắt đầu sớm
+        }
+
+        double speed = moveSpeed * PATROL_SPEED_SCALE;
+        Point2D me = getFeetCenter();
+
+        // Đang ở xa lãnh thổ (vừa đuổi theo ai xa nhà): đi về trước rồi mới tuần tra
+        if (idleSpot == null && me.distance(home) > patrolRadius * 1.5) {
+            moveToPoint(home, speed * 1.4, 4, true);
+            return;
+        }
+
+        if (idleSpot != null) {
+            boolean arrived = moveToPoint(idleSpot, speed, 2, true);
+            if (arrived || now > idleSpotDeadline) {
+                idleSpot = null;
+                idleNextActionAt = now + 1500 + r.nextInt(2500);   // nghỉ rồi đi tiếp
+                if (arrived) {
+                    faceHorizontal(r.nextBoolean());               // tới nơi thì nhìn quanh một chút
+                }
+            }
+            return;
+        }
+        if (now < idleNextActionAt) {
+            return;
+        }
+
+        if (r.nextInt(100) < 20) {   // thỉnh thoảng chỉ đứng nhìn hướng khác
+            faceHorizontal(r.nextBoolean());
+            idleNextActionAt = now + 1500 + r.nextInt(2500);
+            return;
+        }
+
+        // Chọn điểm tự do trong lãnh thổ mà đi thẳng từ chỗ đang đứng tới được
+        for (int attempt = 0; attempt < 8; attempt++) {
+            double angle = r.nextDouble(0, Math.PI * 2);
+            double dist = PATROL_MIN_STEP + r.nextDouble() * (patrolRadius - PATROL_MIN_STEP);
+            Point2D p = new Point2D.Double(home.getX() + Math.cos(angle) * dist, home.getY() + Math.sin(angle) * dist);
+            boolean free = room == null || !room.blocks(new Rectangle2D.Double(
+                    p.getX() - footWidth / 2, p.getY() - footHeight / 2, footWidth, footHeight));
+            boolean reachable = room == null
+                    || room.isPathClear(me.getX(), me.getY(), p.getX(), p.getY(), footWidth, footHeight);
+            if (free && reachable) {
+                idleSpot = p;
+                double travelMs = me.distance(p) / Math.max(1, speed) * 1000;
+                idleSpotDeadline = now + (long) (travelMs * 1.5) + 1000;   // quá hạn thì bỏ, phòng kẹt vật cản
+                return;
+            }
+        }
+        idleNextActionAt = now + 1500;   // không chọn được điểm nào: thử lại sau
     }
 
     // =====================================================================
@@ -531,7 +625,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
         this.setIndestructible(false);
 
         // Mặc định gán Team cho Enemy (ví dụ: 2 = Quái, 1 = Player)
-        this.setTeam(2);
+        this.setTeam(TEAM_ENEMY);
 
         // Đăng ký nhận vòng lặp cập nhật từ Game Loop
         Game.loop().attach(this);
@@ -562,6 +656,10 @@ public abstract class Enemy extends Creature implements IUpdateable {
         applyKnockback(now);   // đẩy lùi chạy độc lập với trạng thái
 
         updateAI();            // logic riêng của từng loại quái
+
+        if (usesBaseIdlePatrol() && !hasValidTarget()) {
+            idleBehavior(now);   // chưa có mục tiêu: đi tuần quanh nhà
+        }
 
         applySeparation();     // tách khỏi quái khác và người chơi
     }

@@ -4,6 +4,8 @@ import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.IUpdateable;
 import de.gurkenlabs.litiengine.entities.Creature;
 
+import static entities.Enemy.TEAM_PLAYER;
+
 /**
  * TrainingDummy — Bia tập bắn / Bù nhìn đứng yên cho quái luyện tập.
  * 
@@ -18,7 +20,7 @@ public class TrainingDummy extends Creature implements IUpdateable {
         super("doc"); // Sử dụng sprite doc làm hình đại diện bia tập bắn
 
         this.setLocation(x, y);
-        this.setTeam(1); // Team 1 (cùng phe người chơi) để quái vật nhắm bắn
+        this.setTeam(TEAM_PLAYER); // Team 1 (cùng phe người chơi) để quái vật nhắm bắn
         this.setVelocity(0f); // Tốc độ = 0: đứng yên tuyệt đối
 
         this.getHitPoints().setMax(99999);

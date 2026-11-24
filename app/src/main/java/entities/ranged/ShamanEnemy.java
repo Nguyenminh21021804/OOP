@@ -8,6 +8,7 @@ import de.gurkenlabs.litiengine.graphics.ImageRenderer;
 import de.gurkenlabs.litiengine.graphics.Spritesheet;
 import de.gurkenlabs.litiengine.resources.Resources;
 import entities.Enemy;
+import entities.MonsterType;
 
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -28,7 +29,6 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
     private long castStartTime = 0;
     private final long castDuration = 800; // Niệm chú 800ms (vừa đủ thấy rõ động tác niệm)
     private Point2D targetSpawnPos = null;  // Vị trí vòng ma thuật triệu hồi
-    private boolean facingLeft = false;     // Hướng nhìn có deadzone chống giật
 
     // === Quản lý đệ tử triệu hồi ===
     private final int maxMinions = 3;
@@ -39,17 +39,7 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
     private Spritesheet summonSpritesheet;
 
     public ShamanEnemy() {
-        super(
-            "orc-shaman",   // spritePrefix trong game.litidata (orc-shaman-idle, orc-shaman-walk)
-            140,            // maxHealth
-            16,             // damage đòn đánh ma pháp
-            95f,            // speed — 95 pixel/giây (bước đi linh hoạt hơn)
-            380,            // attackRange — tầm niệm phép 380px
-            550,            // detectionRange
-            1500,           // cooldownMs (1.5s)
-            100,            // safeDistance — giữ cự ly an toàn
-            130             // projectileSpeed — đạn ma pháp bay chậm rãi (130 px/s)
-        );
+        super(MonsterType.ORC_SHAMAN);
     }
 
     /**
@@ -73,43 +63,6 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
         return !isCasting && super.canBeSeparated();
     }
 
-    /**
-     * Định hướng nhìn có vùng đệm deadzone rộng (±40px) để triệt tiêu hoàn toàn hiện tượng
-     * gậy phép và thân hình bị giật lật qua lật lại liên tục khi quái lượn quanh trục X của mục tiêu.
-     */
-    /**
-     * Quay mặt về phía mục tiêu (nhân vật) khi niệm chú tấn công.
-     */
-    @Override
-    protected void faceTarget(ICombatEntity target) {
-        if (target == null) return;
-        double dx = target.getCenter().getX() - this.getCenter().getX();
-        if (dx < -1.0) {
-            this.facingLeft = true;
-            this.setFacingDirection(Direction.LEFT);
-            this.faceHorizontal(true);
-        } else if (dx > 1.0) {
-            this.facingLeft = false;
-            this.setFacingDirection(Direction.RIGHT);
-            this.faceHorizontal(false);
-        }
-    }
-
-    /**
-     * Quay mặt theo hướng di chuyển khi bước đi.
-     */
-    @Override
-    protected void faceMovement(double dx) {
-        if (dx < -0.1) {
-            this.facingLeft = true;
-            this.setFacingDirection(Direction.LEFT);
-            this.faceHorizontal(true);
-        } else if (dx > 0.1) {
-            this.facingLeft = false;
-            this.setFacingDirection(Direction.RIGHT);
-            this.faceHorizontal(false);
-        }
-    }
 
     /**
      * Vòng lặp AI chính của Shaman:
@@ -138,11 +91,6 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
             }
 
             return; // Khựng lại đứng yên giơ gậy trong suốt thời gian niệm chú
-        }
-
-        // Bước 1: Tìm mục tiêu
-        if (target == null || target.isDead()) {
-            findTarget();
         }
 
         if (target == null) {
@@ -212,7 +160,7 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
 
             Point2D spawnLoc = (targetSpawnPos != null) ? targetSpawnPos : new Point2D.Double(getX() + 35, getY() + 10);
             minion.setLocation(spawnLoc);
-            minion.setTeam(2); // Cùng phe Enemy
+            minion.setTeam(TEAM_ENEMY); // Cùng phe Enemy
 
             summonedMinions.add(minion);
             Game.world().environment().add(minion);
@@ -225,7 +173,7 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
                         target.getCenter(),
                         this.getProjectileSpeed(),
                         this.getDamage(),
-                        1,
+                        TEAM_PLAYER,
                         null
                 );
             }
@@ -236,13 +184,7 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
      * Dọn dẹp những đệ tử đã chết khỏi danh sách quản lý.
      */
     private void cleanUpDeadMinions() {
-        Iterator<Enemy> it = summonedMinions.iterator();
-        while (it.hasNext()) {
-            Enemy m = it.next();
-            if (m.isDead()) {
-                it.remove();
-            }
-        }
+        summonedMinions.removeIf(Enemy::isDead);
     }
 
     /**
@@ -278,13 +220,13 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
 
                 // Vị trí gậy: khi niệm chú giơ cao lên (-8px), bình thường cầm bên hông (+1px)
                 double staffOffsetY = isCasting ? -8.0 : 1.0;
-                double staffOffsetX = facingLeft ? -8.0 : 4.0;
+                double staffOffsetX = isFacingLeft() ? -8.0 : 4.0;
 
                 double sx = centerLoc.getX() + staffOffsetX;
                 double sy = centerLoc.getY() + staffOffsetY;
 
                 // Độ nghiêng của gậy: giơ gậy nghiêng về phía trước khi niệm chú
-                double staffAngle = isCasting ? (facingLeft ? -16.0 : 16.0) : (facingLeft ? -5.0 : 5.0);
+                double staffAngle = isCasting ? (isFacingLeft() ? -16.0 : 16.0) : (isFacingLeft() ? -5.0 : 5.0);
 
                 AffineTransform tx = new AffineTransform();
                 tx.translate(sx, sy);

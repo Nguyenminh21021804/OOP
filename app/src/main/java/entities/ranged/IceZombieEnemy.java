@@ -3,6 +3,7 @@ package entities.ranged;
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import de.gurkenlabs.litiengine.entities.IMobileEntity;
+import entities.MonsterType;
 
 /**
  * IceZombieEnemy — Zombie băng bắn đạn băng (ice bullet) làm chậm đối thủ.
@@ -23,18 +24,7 @@ public class IceZombieEnemy extends RangedEnemy {
      * Đạn: "ice bullet"
      */
     public IceZombieEnemy() {
-        super("ice_zombie",
-                150,    // maxHealth — máu tối đa
-                15,     // damage — sát thương
-                90f,    // speed — 90 pixel/giây (bước đi linh hoạt hơn)
-                380,    // attackRange — tầm tấn công bắn xa
-                550,    // detectionRange — tầm phát hiện
-                1400,   // cooldownMs — hồi chiêu 1.4s
-                100,    // safeDistance — khoảng cách an toàn
-                120     // projectileSpeed — đạn băng bay chậm rãi (120 px/s)
-        );
-        this.attackWindupMs = 150;    // Dừng lại lấy đà tụ băng 150ms
-        this.attackPauseTotalMs = 320; // Tổng thời gian khựng lại: 320ms
+        super(MonsterType.ICE_ZOMBIE);
     }
 
     /**
@@ -54,7 +44,7 @@ public class IceZombieEnemy extends RangedEnemy {
                 target.getCenter(),         // đích nhắm
                 this.getProjectileSpeed(),  // tốc độ bay
                 this.getDamage(),           // sát thương
-                1,                          // mục tiêu đội 1 (Player)
+                TEAM_PLAYER,                          // mục tiêu đội 1 (Player)
                 this::applySlowEffect       // hiệu ứng làm chậm khi trúng
         );
     }
