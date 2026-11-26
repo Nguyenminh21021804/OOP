@@ -1,9 +1,8 @@
-package entities.melee;
+package entities;
 
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.graphics.IRenderable;
 import de.gurkenlabs.litiengine.graphics.RenderType;
-import entities.MonsterType;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
