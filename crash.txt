@@ -1,52 +1,13 @@
-Wed Nov 25 23:46:56 GMT+07:00 2026 AWT-EventQueue-0 threw an exception:
-de.gurkenlabs.litiengine.resources.ResourceLoadException: javax.imageio.IIOException: Can't get input stream from URL!
-	at de.gurkenlabs.litiengine.resources.ResourcesContainer.loadResource(ResourcesContainer.java:445)
-	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1735)
-	at de.gurkenlabs.litiengine.resources.ResourcesContainer.get(ResourcesContainer.java:284)
-	at de.gurkenlabs.litiengine.resources.ResourcesContainer.get(ResourcesContainer.java:202)
-	at weapons.Sword.loadWeaponImage(Sword.java:590)
-	at weapons.Sword.ensureAssetsLoaded(Sword.java:489)
-	at weapons.Sword.<init>(Sword.java:76)
-	at player.Player.<init>(Player.java:125)
-	at screens.PlayScreen.prepare(PlayScreen.java:127)
-	at de.gurkenlabs.litiengine.gui.screens.ScreenManager.display(ScreenManager.java:140)
-	at de.gurkenlabs.litiengine.gui.screens.ScreenManager.display(ScreenManager.java:180)
-	at screens.MainMenuScreen.onNewGame(MainMenuScreen.java:78)
-	at screens.MainMenuScreen.lambda$initializeComponents$0(MainMenuScreen.java:41)
-	at de.gurkenlabs.litiengine.gui.GuiComponent.lambda$mouseReleased$0(GuiComponent.java:652)
-	at java.base/java.util.concurrent.CopyOnWriteArrayList.forEach(CopyOnWriteArrayList.java:905)
-	at de.gurkenlabs.litiengine.gui.GuiComponent.mouseReleased(GuiComponent.java:652)
-	at de.gurkenlabs.litiengine.input.Mouse.lambda$mouseReleased$0(Mouse.java:231)
-	at java.base/java.util.concurrent.ConcurrentHashMap$KeySetView.forEach(ConcurrentHashMap.java:4737)
-	at de.gurkenlabs.litiengine.input.Mouse.mouseReleased(Mouse.java:231)
-	at java.desktop/java.awt.Component.processMouseEvent(Component.java:6548)
-	at java.desktop/java.awt.Component.processEvent(Component.java:6313)
-	at java.desktop/java.awt.Component.dispatchEventImpl(Component.java:4930)
-	at java.desktop/java.awt.Component.dispatchEvent(Component.java:4770)
-	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:700)
-	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:677)
-	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:203)
-	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:124)
-	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:113)
-	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:109)
-	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:101)
-	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:90)
-Caused by: javax.imageio.IIOException: Can't get input stream from URL!
-	at java.desktop/javax.imageio.ImageIO.read(ImageIO.java:1355)
-	at de.gurkenlabs.litiengine.resources.Images.load(Images.java:46)
-	at de.gurkenlabs.litiengine.resources.Images.load(Images.java:13)
-	at de.gurkenlabs.litiengine.resources.ResourcesContainer.loadResource(ResourcesContainer.java:443)
-	... 30 more
-Caused by: java.io.FileNotFoundException: F:\OOP\weapons\sword_lv1_2.png (The system cannot find the path specified)
-	at java.base/java.io.FileInputStream.open0(Native Method)
-	at java.base/java.io.FileInputStream.open(FileInputStream.java:185)
-	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:139)
-	at java.base/java.io.FileInputStream.<init>(FileInputStream.java:109)
-	at java.base/sun.net.www.protocol.file.FileURLConnection.connect(FileURLConnection.java:126)
-	at java.base/sun.net.www.protocol.file.FileURLConnection.getInputStream(FileURLConnection.java:231)
-	at java.base/java.net.URL.openStream(URL.java:1260)
-	at java.desktop/javax.imageio.ImageIO.read(ImageIO.java:1353)
-	... 33 more
+Sun Nov 22 16:47:56 GMT+07:00 2026 main threw an exception:
+java.lang.NullPointerException: Cannot store to object array because "this.weaponImgs" is null
+	at screens.CharacterSelectScreen.loadSprites(CharacterSelectScreen.java:160)
+	at screens.CharacterSelectScreen.initializeComponents(CharacterSelectScreen.java:89)
+	at de.gurkenlabs.litiengine.gui.GuiComponent.<init>(GuiComponent.java:186)
+	at de.gurkenlabs.litiengine.gui.GuiComponent.<init>(GuiComponent.java:121)
+	at de.gurkenlabs.litiengine.gui.screens.Screen.<init>(Screen.java:14)
+	at de.gurkenlabs.litiengine.gui.screens.GameScreen.<init>(GameScreen.java:18)
+	at screens.CharacterSelectScreen.<init>(CharacterSelectScreen.java:84)
+	at App.main(App.java:20)
 
 ====Runtime Information====
 Operating System: Windows 11
@@ -54,12 +15,12 @@ Operating System: Windows 11
 	Version: 10.0
 Memory:
 	Max heap size: 3.9 GiB
-	Current heap size: 32.0 MiB
-	Heap used: 22.6 MiB
+	Current heap size: 18.0 MiB
+	Heap used: 8.6 MiB
 	Free heap: 9.4 MiB
 Java Version: Java(TM) SE Runtime Environment 27+35-2325 
 	Vendor: Oracle Corporation
-Uptime: PT1.182S
+Uptime: PT0.532S
 Screens: 1
-	Screen 0: 2560x1600@180hz
+	Screen 0: 1920x1080@165hz
 
