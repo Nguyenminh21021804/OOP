@@ -181,6 +181,10 @@
  </tile>
  <tile id="40">
   <image source="../2D Pixel Dungeon Asset Pack/items and trap_animation/flamethrower/flamethrower_1_1.png" width="16" height="32"/>
+  <animation>
+   <frame tileid="40" duration="120"/>
+   <frame tileid="41" duration="120"/>
+  </animation>
  </tile>
  <tile id="41">
   <image source="../2D Pixel Dungeon Asset Pack/items and trap_animation/flamethrower/flamethrower_1_2.png" width="16" height="32"/>

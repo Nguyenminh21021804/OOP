@@ -64,6 +64,7 @@ public final class MapHazardLoader {
         public final List<Rectangle2D> pits = new ArrayList<>();
         public int trapCount = 0;
         public int objectCount = 0;
+        public int pickupCount = 0;
         public String pitSource = "none";
     }
 
@@ -108,11 +109,9 @@ public final class MapHazardLoader {
 
     private static final Map<String, TilesetData> TSX_CACHE = new HashMap<>();
     private static final Map<String, BufferedImage> IMAGE_CACHE = new HashMap<>();
-    private static final Map<FloorTrapEntity.TrapKind, BufferedImage[]> FALLBACK_ASSET_CACHE = new HashMap<>();
 
     private static boolean resourceIndexBuilt = false;
     private static final Map<String, File> FILES_BY_NAME = new HashMap<>();
-    private static final List<File> ALL_PNG_FILES = new ArrayList<>();
 
     private MapHazardLoader() {
     }
@@ -205,6 +204,7 @@ public final class MapHazardLoader {
                 + " | layers=" + layerNames
                 + " | objGroups=" + groupNames
                 + " | objects=" + result.objectCount
+                + " | pickups=" + result.pickupCount
                 + " | traps=" + result.trapCount
                 + " | pits=" + result.pits.size()
                 + " (" + result.pitSource + ")");
@@ -300,39 +300,28 @@ public final class MapHazardLoader {
                     ? tpl.tileset
                     : findTilesetForGid(mapTilesets, rawGid);
 
+            String combined = (layerName + " " + objIdentity).toLowerCase(Locale.ROOT);
+            FloorTrapEntity.TrapKind trapKind = explicitTrap ? resolveTrapKind(combined, props) : null;
+
             List<BufferedImage> frameList = new ArrayList<>();
             List<Integer> durList = new ArrayList<>();
             if (rawGid > 0 && ref != null && ref.data != null) {
-                extractTileAnimation(ref.data, rawGid - ref.firstGid, frameList, durList, explicitTrap);
+                extractTileAnimation(ref.data, rawGid - ref.firstGid, frameList, durList, trapKind);
             }
 
             if (explicitTrap) {
-                String combined = (layerName + " " + objIdentity).toLowerCase(Locale.ROOT);
-                FloorTrapEntity.TrapKind kind = resolveTrapKind(combined);
-
-                if (frameList.size() <= 1) {
-                    BufferedImage[] uploadedFrames = resolveUploadedTrapFrames(kind);
-                    if (uploadedFrames != null && uploadedFrames.length > frameList.size()) {
-                        frameList.clear();
-                        durList.clear();
-                        for (BufferedImage img : uploadedFrames) {
-                            frameList.add(img);
-                        }
-                    }
-                }
-
                 if (w <= 0) w = !frameList.isEmpty() ? frameList.get(0).getWidth() : 16.0;
                 if (h <= 0) h = !frameList.isEmpty() ? frameList.get(0).getHeight() : 16.0;
-                double topY = (rawGid != 0) ? (y - h) : y;
+                boolean anchorAtBottom = (rawGid != 0);
 
                 int damage = Math.max(1, parseInt(props.get("damage"), DEFAULT_TRAP_DAMAGE));
                 long delayMs = parseDelayMs(props);
                 String tag = firstNonEmpty(templateAttr, firstNonEmpty(name, layerName));
 
                 env.add(new FloorTrapEntity(
-                        player, kind, tag, x, topY, w, h,
+                        player, trapKind, tag, x, y, anchorAtBottom, w, h,
                         frameList.toArray(new BufferedImage[0]),
-                        toIntArray(durList), damage, delayMs
+                        toIntArray(durList), flipH, flipV, rotation, damage, delayMs, true
                 ));
                 result.trapCount++;
                 continue;
@@ -345,6 +334,23 @@ public final class MapHazardLoader {
             if (isPitKeyword(objIdentity)) {
                 result.pits.add(new Rectangle2D.Double(x, topY, w, h));
                 result.pitSource = "object_layer:" + layerName;
+                continue;
+            }
+
+            String tileImagePath = (rawGid > 0 && ref != null && ref.data != null)
+                    ? ref.data.tileImagePaths.get(rawGid - ref.firstGid)
+                    : null;
+            PotionPickupEntity.PotionKind potionKind = resolvePotionKind(name, type, templateAttr, props, tileImagePath);
+            if (potionKind != null && !frameList.isEmpty()) {
+                int potionAmount = resolvePotionAmount(potionKind, props, tileImagePath);
+                env.add(new PotionPickupEntity(
+                        env, player, potionKind, potionAmount,
+                        x, y, w, h,
+                        frameList.toArray(new BufferedImage[0]),
+                        toIntArray(durList),
+                        flipH, flipV, rotation
+                ));
+                result.pickupCount++;
                 continue;
             }
 
@@ -416,133 +422,26 @@ public final class MapHazardLoader {
                         continue;
                     }
 
-                    FloorTrapEntity.TrapKind kind = resolveTrapKind(tl.name.toLowerCase(Locale.ROOT));
+                    FloorTrapEntity.TrapKind kind = resolveTrapKind(tl.name.toLowerCase(Locale.ROOT), null);
                     TilesetRef ref = findTilesetForGid(mapTilesets, gid);
                     List<BufferedImage> frameList = new ArrayList<>();
                     List<Integer> durList = new ArrayList<>();
                     if (ref != null && ref.data != null) {
-                        extractTileAnimation(ref.data, gid - ref.firstGid, frameList, durList, true);
-                    }
-                    if (frameList.size() <= 1) {
-                        BufferedImage[] uploadedFrames = resolveUploadedTrapFrames(kind);
-                        if (uploadedFrames != null && uploadedFrames.length > frameList.size()) {
-                            frameList.clear();
-                            durList.clear();
-                            for (BufferedImage img : uploadedFrames) frameList.add(img);
-                        }
+                        extractTileAnimation(ref.data, gid - ref.firstGid, frameList, durList, kind);
                     }
 
+                    // Tile Layer đã được LITIengine MapRenderer tự vẽ đúng đồ họa gốc của map
+                    boolean drawOverTile = frameList.size() > 1;
                     env.add(new FloorTrapEntity(
                             player, kind, "layer:" + tl.name,
-                            c * tileW, r * tileH, tileW, tileH,
+                            c * tileW, r * tileH, false, tileW, tileH,
                             frameList.toArray(new BufferedImage[0]),
-                            toIntArray(durList), DEFAULT_TRAP_DAMAGE, 0L
+                            toIntArray(durList), false, false, 0.0, DEFAULT_TRAP_DAMAGE, 0L, drawOverTile
                     ));
                     result.trapCount++;
                 }
             }
         }
-    }
-
-    // ==================== NẠP SPRITE BẪY TỪ RESOURCES ====================
-
-    private static BufferedImage[] resolveUploadedTrapFrames(FloorTrapEntity.TrapKind kind) {
-        if (FALLBACK_ASSET_CACHE.containsKey(kind)) {
-            return FALLBACK_ASSET_CACHE.get(kind);
-        }
-
-        ensureResourceIndex();
-        List<File> matched = new ArrayList<>();
-
-        if (kind == FloorTrapEntity.TrapKind.SPIKE_CYCLE) {
-            matched = findMatchingPngs("peaks", null);
-            if (matched.isEmpty()) matched = findMatchingPngs("spike", null);
-            if (matched.isEmpty()) matched = findMatchingPngs("floor_trap", null);
-        } else {
-            matched = findMatchingPngs("flamethrower_1", null);
-            if (matched.isEmpty()) matched = findMatchingPngs("flamethrower_2", null);
-            if (matched.isEmpty()) matched = findMatchingPngs("flamethrower", null);
-            if (matched.isEmpty()) matched = findMatchingPngs("fire_trap", null);
-            if (matched.isEmpty()) matched = findMatchingPngs("fire_cycle", null);
-        }
-
-        List<BufferedImage> out = new ArrayList<>();
-        if (matched.size() == 1) {
-            BufferedImage single = readImageFile(matched.get(0));
-            if (single != null) {
-                sliceIfHorizontalStrip(single, out);
-            }
-        } else {
-            matched.sort(Comparator.comparingInt(MapHazardLoader::extractTrailingNumber)
-                    .thenComparing(f -> f.getName().toLowerCase(Locale.ROOT)));
-            for (File f : matched) {
-                BufferedImage img = readImageFile(f);
-                if (img != null) {
-                    out.add(img);
-                }
-            }
-        }
-
-        BufferedImage[] arr = out.toArray(new BufferedImage[0]);
-        if (arr.length > 0) {
-            System.out.println("[MapHazardLoader] Da nap " + arr.length + " frame do hoa that cho "
-                    + kind + " tu " + matched.get(0).getName());
-        }
-        FALLBACK_ASSET_CACHE.put(kind, arr);
-        return arr;
-    }
-
-    private static List<File> findMatchingPngs(String mustContain, String excludeContain) {
-        List<File> found = new ArrayList<>();
-        String target = mustContain.toLowerCase(Locale.ROOT);
-        String exclude = (excludeContain != null) ? excludeContain.toLowerCase(Locale.ROOT) : null;
-
-        for (File f : ALL_PNG_FILES) {
-            String pathNorm = f.getPath().replace('\\', '/').toLowerCase(Locale.ROOT);
-            String name = f.getName().toLowerCase(Locale.ROOT);
-            if (exclude != null && pathNorm.contains(exclude)) continue;
-            if (name.contains(target) || pathNorm.contains("/" + target + "/")) {
-                found.add(f);
-            }
-        }
-
-        if (found.size() > 1) {
-            Map<File, List<File>> byParent = new HashMap<>();
-            for (File f : found) {
-                byParent.computeIfAbsent(f.getParentFile(), k -> new ArrayList<>()).add(f);
-            }
-            List<File> best = found;
-            int bestSize = -1;
-            for (List<File> group : byParent.values()) {
-                if (group.size() > bestSize) {
-                    bestSize = group.size();
-                    best = group;
-                }
-            }
-            return new ArrayList<>(best);
-        }
-        return found;
-    }
-
-    private static void sliceIfHorizontalStrip(BufferedImage img, List<BufferedImage> out) {
-        int w = img.getWidth();
-        int h = img.getHeight();
-        if (h > 0 && w >= h * 2 && w % h == 0) {
-            int count = w / h;
-            for (int i = 0; i < count; i++) {
-                out.add(img.getSubimage(i * h, 0, h, h));
-            }
-        } else {
-            out.add(img);
-        }
-    }
-
-    private static int extractTrailingNumber(File f) {
-        Matcher m = TRAILING_INDEX_PATTERN.matcher(f.getName());
-        if (m.matches()) {
-            return parseInt(m.group(2), 0);
-        }
-        return 0;
     }
 
     // ==================== NHẬN DIỆN TỪ KHÓA ====================
@@ -584,18 +483,22 @@ public final class MapHazardLoader {
                 || low.contains("under");
     }
 
-    private static FloorTrapEntity.TrapKind resolveTrapKind(String combined) {
+    private static FloorTrapEntity.TrapKind resolveTrapKind(String combined, Map<String, String> props) {
+        String mode = (props != null) ? firstNonEmpty(props.get("mode"), "").toLowerCase(Locale.ROOT) : "";
+        boolean permanent = "permanent".equals(mode)
+                || "const".equals(mode)
+                || "static".equals(mode)
+                || combined.contains("perm")
+                || combined.contains("const")
+                || combined.contains("static");
         if (combined.contains("fire") || combined.contains("flame") || combined.contains("lua")) {
-            if (combined.contains("perm") || combined.contains("const") || combined.contains("static")) {
-                return FloorTrapEntity.TrapKind.FIRE_PERMANENT;
-            }
-            return FloorTrapEntity.TrapKind.FIRE_CYCLE;
+            return permanent ? FloorTrapEntity.TrapKind.FIRE_PERMANENT : FloorTrapEntity.TrapKind.FIRE_CYCLE;
         }
-        return FloorTrapEntity.TrapKind.SPIKE_CYCLE;
+        return permanent ? FloorTrapEntity.TrapKind.SPIKE_PERMANENT : FloorTrapEntity.TrapKind.SPIKE_CYCLE;
     }
 
     private static long parseDelayMs(Map<String, String> props) {
-        for (String key : new String[] { "delay", "offset", "phase", "startDelay", "start_delay" }) {
+        for (String key : new String[] { "delay", "offset", "offset_ms", "phase", "startDelay", "start_delay", "startdelay" }) {
             String val = props.get(key);
             if (val != null && !val.isEmpty()) {
                 double d = parseDouble(val, 0.0);
@@ -613,6 +516,68 @@ public final class MapHazardLoader {
                 || low.contains("chasm") || low.contains("fall") || low.contains("death_zone")
                 || low.contains("kill") || low.contains("ho_bay") || low.contains("ho_den")
                 || low.contains("hố") || low.equals("ho");
+    }
+
+    private static PotionPickupEntity.PotionKind resolvePotionKind(
+            String name,
+            String type,
+            String templateAttr,
+            Map<String, String> props,
+            String tileImagePath
+    ) {
+        String propKind = (props != null) ? firstNonEmpty(props.get("kind"), "").trim().toLowerCase(Locale.ROOT) : "";
+        if ("hp".equals(propKind) || "heal".equals(propKind) || "health".equals(propKind)) {
+            return PotionPickupEntity.PotionKind.HEALTH;
+        }
+        if ("mp".equals(propKind) || "mana".equals(propKind)) {
+            return PotionPickupEntity.PotionKind.MANA;
+        }
+
+        String tileLow = (tileImagePath != null) ? tileImagePath.toLowerCase(Locale.ROOT) : "";
+        if (tileLow.contains("flasks_1_") || tileLow.contains("flasks_4_")) {
+            return PotionPickupEntity.PotionKind.HEALTH;
+        }
+        if (tileLow.contains("flasks_2_") || tileLow.contains("flasks_3_")) {
+            return PotionPickupEntity.PotionKind.MANA;
+        }
+
+        String combined = (firstNonEmpty(templateAttr, "") + " " + firstNonEmpty(name, "") + " " + firstNonEmpty(type, ""))
+                .toLowerCase(Locale.ROOT);
+        boolean looksLikePotion = combined.contains("potion") || combined.contains("flask")
+                || combined.contains("elixir") || "pickup".equalsIgnoreCase(type);
+        if (!looksLikePotion) return null;
+
+        for (String token : combined.split("[^a-z0-9]+")) {
+            if ("hp".equals(token) || "heal".equals(token) || "health".equals(token)) {
+                return PotionPickupEntity.PotionKind.HEALTH;
+            }
+            if ("mp".equals(token) || "mana".equals(token)) {
+                return PotionPickupEntity.PotionKind.MANA;
+            }
+        }
+        return null;
+    }
+
+    private static int resolvePotionAmount(
+            PotionPickupEntity.PotionKind kind,
+            Map<String, String> props,
+            String tileImagePath
+    ) {
+        String tileLow = (tileImagePath != null) ? tileImagePath.toLowerCase(Locale.ROOT) : "";
+        boolean isLargeFlask = tileLow.contains("flasks_1_") || tileLow.contains("flasks_3_");
+        int propAmount = (props != null) ? parseInt(props.get("amount"), 0) : 0;
+
+        if (kind == PotionPickupEntity.PotionKind.HEALTH) {
+            if (propAmount >= 1 && propAmount <= 6) {
+                return propAmount;
+            }
+            return isLargeFlask ? 3 : 2;
+        }
+
+        if (propAmount > 0) {
+            return propAmount;
+        }
+        return isLargeFlask ? 50 : 30;
     }
 
     // ==================== TỰ DÒ HỐ BẪY TRÊN TẤT CẢ CÁC LAYER HIỂN THỊ ====================
@@ -965,10 +930,10 @@ public final class MapHazardLoader {
             int localId,
             List<BufferedImage> outFrames,
             List<Integer> outDurs,
-            boolean autoExpandNumberedFrames
+            FloorTrapEntity.TrapKind cycleTrapKind
     ) {
         int[] animIds = ts.animTileIds.get(localId);
-        int[] animDurs = ts.animDurations.get(localId);
+        int[] animDurs = ts.animTileIds.containsKey(localId) ? ts.animDurations.get(localId) : null;
         if (animIds != null && animIds.length > 0) {
             for (int i = 0; i < animIds.length; i++) {
                 BufferedImage img = getTileFromData(ts, animIds[i]);
@@ -980,7 +945,10 @@ public final class MapHazardLoader {
             if (!outFrames.isEmpty()) return;
         }
 
-        if (autoExpandNumberedFrames) {
+        // Chỉ mở rộng frame kế tiếp TRONG CHÍNH TILESET CỦA MAP (khi dùng bẫy theo chu kỳ chưa gắn thẻ <animation>)
+        boolean isCycleTrap = (cycleTrapKind == FloorTrapEntity.TrapKind.SPIKE_CYCLE
+                || cycleTrapKind == FloorTrapEntity.TrapKind.FIRE_CYCLE);
+        if (isCycleTrap) {
             String path = ts.tileImagePaths.get(localId);
             if (path != null) {
                 String fileName = path.substring(path.lastIndexOf('/') + 1);
@@ -988,26 +956,36 @@ public final class MapHazardLoader {
                 Matcher m = TRAILING_INDEX_PATTERN.matcher(fileName);
                 if (m.matches()) {
                     String prefix = m.group(1);
-                    int startIdx = parseInt(m.group(2), 1);
                     String ext = m.group(3);
-                    for (int idx = startIdx; idx < startIdx + 8; idx++) {
-                        BufferedImage seqImg = loadImage(dir + prefix + idx + ext);
-                        if (seqImg == null) break;
-                        outFrames.add(seqImg);
+                    List<Map.Entry<Integer, BufferedImage>> siblings = new ArrayList<>();
+                    for (Map.Entry<Integer, String> entry : ts.tileImagePaths.entrySet()) {
+                        String siblingPath = entry.getValue();
+                        if (!parentDir(siblingPath).equals(dir)) continue;
+                        String sibName = siblingPath.substring(siblingPath.lastIndexOf('/') + 1);
+                        Matcher sm = TRAILING_INDEX_PATTERN.matcher(sibName);
+                        if (sm.matches()
+                                && sm.group(1).equalsIgnoreCase(prefix)
+                                && sm.group(3).equalsIgnoreCase(ext)) {
+                            BufferedImage img = getTileFromData(ts, entry.getKey());
+                            if (img != null) {
+                                siblings.add(Map.entry(parseInt(sm.group(2), 0), img));
+                            }
+                        }
                     }
-                    if (outFrames.size() > 1) return;
-                    outFrames.clear();
+                    if (siblings.size() > 1) {
+                        siblings.sort(Comparator.comparingInt(Map.Entry::getKey));
+                        for (Map.Entry<Integer, BufferedImage> s : siblings) {
+                            outFrames.add(s.getValue());
+                        }
+                        return;
+                    }
                 }
             }
         }
 
         BufferedImage single = getTileFromData(ts, localId);
         if (single != null) {
-            if (autoExpandNumberedFrames) {
-                sliceIfHorizontalStrip(single, outFrames);
-            } else {
-                outFrames.add(single);
-            }
+            outFrames.add(single);
         }
     }
 
@@ -1062,7 +1040,7 @@ public final class MapHazardLoader {
             File root = new File(rootPath);
             if (root.exists() && root.isDirectory()) {
                 indexDirectory(root);
-                if (!ALL_PNG_FILES.isEmpty()) break;
+                if (!FILES_BY_NAME.isEmpty()) break;
             }
         }
     }
@@ -1076,9 +1054,6 @@ public final class MapHazardLoader {
             } else if (f.isFile()) {
                 String lowName = f.getName().toLowerCase(Locale.ROOT);
                 FILES_BY_NAME.putIfAbsent(lowName, f);
-                if (lowName.endsWith(".png")) {
-                    ALL_PNG_FILES.add(f);
-                }
             }
         }
     }
@@ -1110,28 +1085,33 @@ public final class MapHazardLoader {
         return img;
     }
 
-    private static BufferedImage readImageFile(File f) {
-        if (f == null || !f.exists()) return null;
-        String key = f.getAbsolutePath();
-        if (IMAGE_CACHE.containsKey(key)) {
-            return IMAGE_CACHE.get(key);
-        }
-        try {
-            BufferedImage img = ImageIO.read(f);
-            if (img != null) {
-                IMAGE_CACHE.put(key, img);
-            }
-            return img;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     private static InputStream openResource(String path) {
         if (path == null || path.isEmpty()) return null;
         String clean = path.replace('\\', '/');
         while (clean.startsWith("/")) clean = clean.substring(1);
 
+        InputStream is = openExactResource(clean);
+        if (is != null) return is;
+
+        String deduped = collapseDuplicateSegments(clean);
+        if (!deduped.equals(clean)) {
+            is = openExactResource(deduped);
+            if (is != null) return is;
+        }
+
+        ensureResourceIndex();
+        String baseName = clean.substring(clean.lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
+        File indexed = FILES_BY_NAME.get(baseName);
+        if (indexed != null && indexed.exists()) {
+            try {
+                return new FileInputStream(indexed);
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
+    }
+
+    private static InputStream openExactResource(String clean) {
         InputStream is = MapHazardLoader.class.getResourceAsStream("/" + clean);
         if (is != null) return is;
 
@@ -1147,17 +1127,18 @@ public final class MapHazardLoader {
                 }
             }
         }
-
-        ensureResourceIndex();
-        String baseName = clean.substring(clean.lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
-        File indexed = FILES_BY_NAME.get(baseName);
-        if (indexed != null && indexed.exists()) {
-            try {
-                return new FileInputStream(indexed);
-            } catch (Exception ignored) {
-            }
-        }
         return null;
+    }
+
+    private static String collapseDuplicateSegments(String clean) {
+        String[] parts = clean.split("/");
+        List<String> out = new ArrayList<>(parts.length);
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+            if (!out.isEmpty() && out.get(out.size() - 1).equals(part)) continue;
+            out.add(part);
+        }
+        return String.join("/", out);
     }
 
     // ==================== ĐỌC DỮ LIỆU TILE LAYER ====================

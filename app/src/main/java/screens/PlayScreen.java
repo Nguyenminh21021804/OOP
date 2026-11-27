@@ -27,14 +27,17 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 public class PlayScreen extends GameScreen {
     public static final String NAME = "PLAY";
 
-    private static final String[] MAP_FILES = {
+    private static final String[] DEFAULT_MAP_FILES = {
         "Map_01.tmx",
         "Map_01_challenge_room.tmx",
         "Map_02_vuc_tham.tmx",
@@ -51,6 +54,7 @@ public class PlayScreen extends GameScreen {
         "Stage2_Secret_B.tmx"
     };
 
+    private List<String> mapFiles;
     private Player player;
     private int currentMapIndex = 0;
     private double mapWidth = 352.0;
@@ -66,6 +70,7 @@ public class PlayScreen extends GameScreen {
 
     @Override
     protected void initializeComponents() {
+        discoverMapFiles();
         try {
             uiFont = Resources.fonts().get("font/PeaberryBase.ttf");
         } catch (Exception e) {
@@ -105,14 +110,6 @@ public class PlayScreen extends GameScreen {
                 return;
             }
 
-            if (code == KeyEvent.VK_F3) {
-                boolean next = !Game.config().debug().renderCollisionBoxes();
-                Game.config().debug().setDebugEnabled(next);
-                Game.config().debug().setRenderCollisionBoxes(next);
-                Game.config().debug().setRenderBoundingBoxes(next);
-                return;
-            }
-
             if (player != null) {
                 player.handleKeyPressed(code);
             }
@@ -128,6 +125,7 @@ public class PlayScreen extends GameScreen {
     @Override
     public void prepare() {
         super.prepare();
+        discoverMapFiles();
         currentMapIndex = 0;
         // Tạo lại Player mới mỗi lần bấm Start để nhận đúng nhân vật & 2 vũ khí vừa chọn
         player = null;
@@ -135,6 +133,37 @@ public class PlayScreen extends GameScreen {
             return;
         }
         loadMapByIndex(currentMapIndex);
+    }
+
+    private void discoverMapFiles() {
+        if (mapFiles == null) {
+            mapFiles = new ArrayList<>();
+        } else {
+            mapFiles.clear();
+        }
+        Collections.addAll(mapFiles, DEFAULT_MAP_FILES);
+
+        String[] roots = {
+            "app/src/main/resources/maps",
+            "src/main/resources/maps",
+            "app/build/resources/main/maps",
+            "build/resources/main/maps"
+        };
+        List<String> extraMaps = new ArrayList<>();
+        for (String rootPath : roots) {
+            File dir = new File(rootPath);
+            if (!dir.exists() || !dir.isDirectory()) continue;
+            File[] files = dir.listFiles((d, name) -> name.toLowerCase(Locale.ROOT).endsWith(".tmx"));
+            if (files == null) continue;
+            Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+            for (File f : files) {
+                String fn = f.getName();
+                if (!mapFiles.contains(fn) && !extraMaps.contains(fn)) {
+                    extraMaps.add(fn);
+                }
+            }
+        }
+        mapFiles.addAll(extraMaps);
     }
 
     private boolean ensurePlayerReady() {
@@ -221,12 +250,14 @@ public class PlayScreen extends GameScreen {
     }
 
     private void nextMap() {
-        currentMapIndex = (currentMapIndex + 1) % MAP_FILES.length;
+        if (mapFiles == null || mapFiles.isEmpty()) return;
+        currentMapIndex = (currentMapIndex + 1) % mapFiles.size();
         loadMapByIndex(currentMapIndex);
     }
 
     private void prevMap() {
-        currentMapIndex = (currentMapIndex - 1 + MAP_FILES.length) % MAP_FILES.length;
+        if (mapFiles == null || mapFiles.isEmpty()) return;
+        currentMapIndex = (currentMapIndex - 1 + mapFiles.size()) % mapFiles.size();
         loadMapByIndex(currentMapIndex);
     }
 
@@ -234,11 +265,20 @@ public class PlayScreen extends GameScreen {
         Game.world().unloadEnvironment();
         loadError = null;
 
+        if (mapFiles == null || mapFiles.isEmpty()) {
+            loadError = "Khong tim thay file map .tmx nao trong maps/";
+            return;
+        }
+        if (index < 0 || index >= mapFiles.size()) {
+            index = 0;
+        }
+
         if (!ensurePlayerReady()) {
             return;
         }
 
-        String mapPath = "maps/" + MAP_FILES[index];
+        String mapFileName = mapFiles.get(index);
+        String mapPath = "maps/" + mapFileName;
         try {
             IMap map = Resources.maps().get(mapPath);
             if (map == null) {
@@ -279,7 +319,7 @@ public class PlayScreen extends GameScreen {
             }
 
             MapHazardLoader.LoadResult hazards = MapHazardLoader.loadHazards(
-                    MAP_FILES[index], env, player, wallRects
+                    mapFileName, env, player, wallRects
             );
             player.setMapPits(hazards.pits);
 
@@ -406,8 +446,10 @@ public class PlayScreen extends GameScreen {
         FontMetrics fm = g.getFontMetrics();
         int barH = (int) Math.round(34 * k);
 
-        String mapInfo = String.format("[%d/%d] %s",
-                currentMapIndex + 1, MAP_FILES.length, MAP_FILES[currentMapIndex]);
+        String mapInfo = (mapFiles == null || mapFiles.isEmpty())
+                ? "[0/0] None"
+                : String.format("[%d/%d] %s",
+                        currentMapIndex + 1, mapFiles.size(), mapFiles.get(currentMapIndex));
         int infoW = fm.stringWidth(mapInfo) + (int) Math.round(24 * k);
         int infoX = (int) Math.round((v.w - infoW) / 2.0);
 
@@ -483,8 +525,7 @@ public class PlayScreen extends GameScreen {
                 + " | [" + (player.getCurrentWeaponIndex() + 1) + "/" + player.getWeaponArsenal().size() + "] "
                 + weaponText + " (1/2,Q:DoiVK, V:Up)"
                 + " | J:Danh | U:Skill(" + skillText + ")"
-                + " | K:Dash(" + dashText + ")"
-                + " | F3:Hitbox";
+                + " | K:Dash(" + dashText + ")";
 
         int bottomH = (int) Math.round(26 * k);
         int bottomY = (int) Math.round(v.h) - bottomH - (int) Math.round(8 * k);

@@ -4,6 +4,8 @@ import de.gurkenlabs.litiengine.Align;
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.IUpdateable;
 import de.gurkenlabs.litiengine.Valign;
+import de.gurkenlabs.litiengine.attributes.AttributeModifier;
+import de.gurkenlabs.litiengine.attributes.Modification;
 import de.gurkenlabs.litiengine.entities.CollisionInfo;
 import de.gurkenlabs.litiengine.entities.CombatInfo;
 import de.gurkenlabs.litiengine.entities.Creature;
@@ -122,9 +124,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
     private boolean skillKeyLocked = false;
     private boolean upgradeKeyLocked = false;
     private boolean weaponSwitchKeyLocked = false;
-    private boolean hurtKeyLocked = false;
-    private boolean dieKeyLocked = false;
-    private boolean switchKeyLocked = false;
     private long lastUpdateNano = System.nanoTime();
 
     public Player(double x, double y, PlayerSkin initialSkin) {
@@ -210,12 +209,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
             return;
         }
 
-        if (code == KeyEvent.VK_C && !switchKeyLocked) {
-            switchKeyLocked = true;
-            switchToNextSkin();
-            return;
-        }
-
         if (isDead() || state == State.SPAWN || state == State.FALL || weaponDashing) return;
 
         if ((code == KeyEvent.VK_K || code == KeyEvent.VK_SPACE)
@@ -254,24 +247,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         if (code == KeyEvent.VK_2) {
             equipWeaponByIndex(1);
         }
-
-        if (code == KeyEvent.VK_3) {
-            equipWeaponByIndex(2);
-        }
-
-        if (code == KeyEvent.VK_4) {
-            equipWeaponByIndex(3);
-        }
-
-        if (code == KeyEvent.VK_H && !hurtKeyLocked) {
-            hurtKeyLocked = true;
-            hit(1);
-        }
-
-        if (code == KeyEvent.VK_X && !dieKeyLocked) {
-            dieKeyLocked = true;
-            triggerTestDie();
-        }
     }
 
     public void handleKeyReleased(int code) {
@@ -281,9 +256,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         if (code == KeyEvent.VK_U) skillKeyLocked = false;
         if (code == KeyEvent.VK_V) upgradeKeyLocked = false;
         if (code == KeyEvent.VK_Q) weaponSwitchKeyLocked = false;
-        if (code == KeyEvent.VK_H) hurtKeyLocked = false;
-        if (code == KeyEvent.VK_X) dieKeyLocked = false;
-        if (code == KeyEvent.VK_C) switchKeyLocked = false;
     }
 
     public void clearPressedKeys() {
@@ -294,9 +266,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         skillKeyLocked = false;
         upgradeKeyLocked = false;
         weaponSwitchKeyLocked = false;
-        hurtKeyLocked = false;
-        dieKeyLocked = false;
-        switchKeyLocked = false;
     }
 
     // ==================== VÒNG LẶP CẬP NHẬT & VẼ ====================
@@ -616,6 +585,16 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         mana = Math.min(maxMana, mana + amount);
     }
 
+    public int heal(int amount) {
+        if (amount <= 0 || isDead()) return 0;
+        int before = getHp();
+        int max = getMaxHp();
+        if (before >= max) return 0;
+        int next = Math.min(max, before + amount);
+        getHitPoints().modify(new AttributeModifier<>(Modification.SET, next));
+        return Math.max(0, getHp() - before);
+    }
+
     public boolean isUntouchableByTrap() {
         return isDead() || dashing || weaponDashing || state == State.SPAWN || state == State.FALL
                 || System.currentTimeMillis() < trapInvulnUntilMs;
@@ -709,22 +688,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         }
     }
 
-    public void triggerTestDie() {
-        if (isDead()) return;
-        dashing = false;
-        weaponDashing = false;
-        knockbackStartTimeMs = 0;
-        if (currentWeapon != null) {
-            currentWeapon.resetState();
-        }
-        armor = 0;
-        if (getHp() > 0) {
-            super.hit(getHp());
-        }
-        dieStartTimeMs = System.currentTimeMillis();
-        setState(State.DIE);
-    }
-
     public void triggerSpawn() {
         this.spawnStartTimeMs = System.currentTimeMillis();
         this.dashing = false;
@@ -748,18 +711,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         this.weaponDashing = false;
         this.setLocation(lastSafeX, lastSafeY);
         triggerSpawn();
-    }
-
-    public void switchToNextSkin() {
-        PlayerSkin next = this.skin.next();
-        if (next == this.skin) {
-            showNotice("Moi chi co 1 nhan vat (" + skin.getDisplayName() + ")");
-            return;
-        }
-        this.skin = next;
-        applySkinMetrics();
-        syncAnimation(true);
-        showNotice("Da doi sang: " + skin.getDisplayName());
     }
 
     public void switchToNextWeapon() {
@@ -801,7 +752,7 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         }
     }
 
-    private void showNotice(String text) {
+    public void showNotice(String text) {
         this.lastActionNotice = text;
         this.actionNoticeUntilMs = System.currentTimeMillis() + 1400;
     }

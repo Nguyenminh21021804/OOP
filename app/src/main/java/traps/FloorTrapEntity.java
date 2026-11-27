@@ -10,6 +10,8 @@ import player.Player;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -18,6 +20,7 @@ public class FloorTrapEntity extends Entity implements IUpdateable, IRenderable 
 
     public enum TrapKind {
         SPIKE_CYCLE,
+        SPIKE_PERMANENT,
         FIRE_CYCLE,
         FIRE_PERMANENT
     }
@@ -29,11 +32,16 @@ public class FloorTrapEntity extends Entity implements IUpdateable, IRenderable 
     private final int[] frameDurations;
     private final boolean[] frameDangerous;
     private final long totalAnimDurationMs;
+    private final boolean renderSprite;
 
-    private final double worldX;
-    private final double worldY;
+    private final double anchorX;
+    private final double anchorY;
+    private final boolean anchorAtBottom;
     private final double worldW;
     private final double worldH;
+    private final boolean flipH;
+    private final boolean flipV;
+    private final double rotationDeg;
     private final int damage;
     private final long phaseOffsetMs;
     private final long startTimeMs;
@@ -54,15 +62,42 @@ public class FloorTrapEntity extends Entity implements IUpdateable, IRenderable 
             int damage,
             long phaseOffsetMs
     ) {
+        this(player, kind, debugTag, x, y, false, w, h, frames, frameDurations,
+                false, false, 0.0, damage, phaseOffsetMs, true);
+    }
+
+    public FloorTrapEntity(
+            Player player,
+            TrapKind kind,
+            String debugTag,
+            double anchorX,
+            double anchorY,
+            boolean anchorAtBottom,
+            double w,
+            double h,
+            BufferedImage[] frames,
+            int[] frameDurations,
+            boolean flipH,
+            boolean flipV,
+            double rotationDeg,
+            int damage,
+            long phaseOffsetMs,
+            boolean renderSprite
+    ) {
         super();
         this.player = player;
         this.kind = kind;
         this.debugTag = (debugTag != null && !debugTag.isEmpty()) ? debugTag : kind.name();
-        this.worldX = x;
-        this.worldY = y;
+        this.anchorX = anchorX;
+        this.anchorY = anchorY;
+        this.anchorAtBottom = anchorAtBottom;
         this.worldW = Math.max(8.0, w);
         this.worldH = Math.max(8.0, h);
         this.frames = (frames != null) ? frames : new BufferedImage[0];
+        this.flipH = flipH;
+        this.flipV = flipV;
+        this.rotationDeg = rotationDeg;
+        this.renderSprite = renderSprite;
         // Cố định mỗi lần giẫm gai / lửa chỉ trừ đúng 1 Giáp (hết Giáp mới trừ 1 HP)
         this.damage = 1;
         this.phaseOffsetMs = phaseOffsetMs;
@@ -88,7 +123,7 @@ public class FloorTrapEntity extends Entity implements IUpdateable, IRenderable 
                 int d;
                 if (hasExplicitDurs && frameDurations[i] > 0) {
                     d = frameDurations[i];
-                } else if (kind == TrapKind.FIRE_PERMANENT) {
+                } else if (kind == TrapKind.FIRE_PERMANENT || kind == TrapKind.SPIKE_PERMANENT) {
                     d = 120;
                 } else if (i == minIdx) {
                     d = 1050;
@@ -102,22 +137,28 @@ public class FloorTrapEntity extends Entity implements IUpdateable, IRenderable 
             }
             this.totalAnimDurationMs = Math.max(1L, sum);
         } else {
-            System.err.println("[FloorTrapEntity] Khong tim thay sprite cho bay: " + this.debugTag);
+            if (renderSprite) {
+                System.err.println("[FloorTrapEntity] Khong tim thay sprite cho bay: " + this.debugTag);
+            }
             this.frameDurations = new int[0];
             this.frameDangerous = new boolean[0];
             this.totalAnimDurationMs = 2600L;
         }
 
         this.setRenderType(RenderType.SURFACE);
-        this.setLocation(worldX, worldY);
+        this.setLocation(anchorX, anchorAtBottom ? (anchorY - this.worldH) : anchorY);
         this.setWidth(worldW);
         this.setHeight(worldH);
+    }
+
+    private boolean isPermanentKind() {
+        return kind == TrapKind.FIRE_PERMANENT || kind == TrapKind.SPIKE_PERMANENT;
     }
 
     private static boolean[] computeDangerFlags(double[] scores, TrapKind kind) {
         int n = scores.length;
         boolean[] flags = new boolean[n];
-        if (kind == TrapKind.FIRE_PERMANENT || n <= 1) {
+        if (kind == TrapKind.FIRE_PERMANENT || kind == TrapKind.SPIKE_PERMANENT || n <= 1) {
             for (int i = 0; i < n; i++) flags[i] = true;
             return flags;
         }
@@ -182,7 +223,7 @@ public class FloorTrapEntity extends Entity implements IUpdateable, IRenderable 
             }
             currentFrameIdx = idx;
             currentlyDangerous = frameDangerous[idx];
-        } else if (kind == TrapKind.FIRE_PERMANENT) {
+        } else if (frames.length == 1 || isPermanentKind()) {
             currentFrameIdx = 0;
             currentlyDangerous = true;
         } else {
@@ -193,54 +234,78 @@ public class FloorTrapEntity extends Entity implements IUpdateable, IRenderable 
 
         if (currentlyDangerous && player != null && !player.isDead() && !player.isUntouchableByTrap()) {
             Rectangle2D foot = player.getHitbox().getFootBox();
-            if (foot != null && foot.intersects(getDamageBox())) {
-                double trapCenterX = worldX + worldW / 2.0;
-                double trapCenterY = worldY + worldH / 2.0;
-                player.hitByTrap(damage, trapCenterX, trapCenterY);
+            if (foot != null) {
+                Shape dmgShape = getDamageShape();
+                if (dmgShape.intersects(foot)) {
+                    Rectangle2D bounds = dmgShape.getBounds2D();
+                    player.hitByTrap(damage, bounds.getCenterX(), bounds.getCenterY());
+                }
             }
         }
     }
 
-    public Rectangle2D getDamageBox() {
+    private AffineTransform buildTransform(double txX, double txY) {
+        AffineTransform tx = new AffineTransform();
+        tx.translate(txX, txY);
+        if (Math.abs(rotationDeg) > 0.01) {
+            tx.rotate(Math.toRadians(rotationDeg));
+        }
+        tx.translate(worldW / 2.0, anchorAtBottom ? (-worldH / 2.0) : (worldH / 2.0));
+        return tx;
+    }
+
+    public Shape getDamageShape() {
         double padX = worldW * 0.14;
         double padY = worldH * 0.14;
-        return new Rectangle2D.Double(
-                worldX + padX,
-                worldY + padY,
-                Math.max(4.0, worldW - padX * 2.0),
-                Math.max(4.0, worldH - padY * 2.0)
-        );
+        double bw = Math.max(4.0, worldW - padX * 2.0);
+        double bh = Math.max(4.0, worldH - padY * 2.0);
+        Rectangle2D local = new Rectangle2D.Double(-bw / 2.0, -bh / 2.0, bw, bh);
+        return buildTransform(anchorX, anchorY).createTransformedShape(local);
+    }
+
+    public Rectangle2D getDamageBox() {
+        return getDamageShape().getBounds2D();
     }
 
     @Override
     public void render(Graphics2D g) {
         if (Game.world().camera() == null) return;
 
-        Point2D vp = Game.world().camera().getViewportLocation(new Point2D.Double(worldX, worldY));
-        int rx = (int) Math.round(vp.getX());
-        int ry = (int) Math.round(vp.getY());
-        int rw = (int) Math.round(worldW);
-        int rh = (int) Math.round(worldH);
+        Point2D vpAnchor = Game.world().camera().getViewportLocation(new Point2D.Double(anchorX, anchorY));
 
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-
-        if (frames.length > 0 && frames[currentFrameIdx] != null) {
-            g2.drawImage(frames[currentFrameIdx], rx, ry, rw, rh, null);
+        if (renderSprite && frames.length > 0 && frames[currentFrameIdx] != null) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g2.transform(buildTransform(vpAnchor.getX(), vpAnchor.getY()));
+            if (flipH || flipV) {
+                g2.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+            }
+            g2.drawImage(
+                    frames[currentFrameIdx],
+                    (int) Math.round(-worldW / 2.0),
+                    (int) Math.round(-worldH / 2.0),
+                    (int) Math.round(worldW),
+                    (int) Math.round(worldH),
+                    null
+            );
+            g2.dispose();
         }
 
         if (Game.config().debug().renderCollisionBoxes()) {
-            Rectangle2D dmgBox = getDamageBox();
-            Point2D dvp = Game.world().camera().getViewportLocation(new Point2D.Double(dmgBox.getX(), dmgBox.getY()));
-            g2.setColor(currentlyDangerous ? new Color(255, 65, 50, 230) : new Color(150, 150, 165, 160));
-            g2.drawRect(
-                    (int) Math.round(dvp.getX()),
-                    (int) Math.round(dvp.getY()),
-                    (int) Math.round(dmgBox.getWidth()),
-                    (int) Math.round(dmgBox.getHeight())
+            Graphics2D dg = (Graphics2D) g.create();
+            dg.setColor(currentlyDangerous ? new Color(255, 65, 50, 230) : new Color(150, 150, 165, 160));
+            double padX = worldW * 0.14;
+            double padY = worldH * 0.14;
+            double bw = Math.max(4.0, worldW - padX * 2.0);
+            double bh = Math.max(4.0, worldH - padY * 2.0);
+            dg.transform(buildTransform(vpAnchor.getX(), vpAnchor.getY()));
+            dg.drawRect(
+                    (int) Math.round(-bw / 2.0),
+                    (int) Math.round(-bh / 2.0),
+                    (int) Math.round(bw),
+                    (int) Math.round(bh)
             );
+            dg.dispose();
         }
-
-        g2.dispose();
     }
 }
