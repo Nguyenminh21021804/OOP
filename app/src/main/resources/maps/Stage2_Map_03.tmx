@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="22" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="84">
+ <properties>
+  <property name="Stage" type="int" value="1"/>
+ </properties>
+ <tileset firstgid="1" name="floor_traps" tilewidth="16" tileheight="16" tilecount="49" columns="7">
+  <image source="../0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7/atlas_floor-16x16.png" width="112" height="112"/>
+ </tileset>
+ <tileset firstgid="50" name="walls_decor" tilewidth="16" tileheight="16" tilecount="192" columns="24">
+  <image source="../0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7/atlas_walls_high-16x32.png" width="384" height="128"/>
+  <tile id="11">
+   <animation>
+    <frame tileid="15" duration="100"/>
+    <frame tileid="16" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="38">
+   <animation>
+    <frame tileid="36" duration="100"/>
+    <frame tileid="37" duration="100"/>
+    <frame tileid="38" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="40">
+   <animation>
+    <frame tileid="39" duration="100"/>
+    <frame tileid="40" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="84">
+   <animation>
+    <frame tileid="84" duration="100"/>
+    <frame tileid="85" duration="100"/>
+    <frame tileid="86" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="89">
+   <animation>
+    <frame tileid="36" duration="100"/>
+    <frame tileid="37" duration="100"/>
+    <frame tileid="38" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="132">
+   <animation>
+    <frame tileid="132" duration="100"/>
+    <frame tileid="133" duration="100"/>
+    <frame tileid="134" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="242" name="room_frame" tilewidth="16" tileheight="16" tilecount="48" columns="12">
+  <image source="../0x72_DungeonTilesetII_v1.7/0x72_DungeonTilesetII_v1.7/atlas_walls_low-16x16.png" width="192" height="64"/>
+ </tileset>
+ <tileset firstgid="290" source="item.tsx"/>
+ <tileset firstgid="382" source="floor_traps.tsx"/>
+ <layer id="4" name="ground" width="22" height="13">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,40,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,41,
+0,40,3,9,10,3,2,2,1,1,2,8,9,8,1,3,1,8,9,2,1,41,
+0,40,8,9,2,10,2,2,1,8,275,275,16,8,9,10,3,15,16,1,3,41,
+0,40,8,3,3,10,8,9,8,1,275,275,2,1,3,10,3,8,9,3,3,41,
+0,40,2,3,9,10,15,16,1,3,275,275,2,3,9,10,3,9,9,10,1,41,
+0,1,1,2,9,275,275,275,275,275,275,275,275,275,275,275,275,9,9,9,8,1,
+0,1,2,8,9,275,275,275,275,275,275,275,275,275,275,275,275,9,3,9,10,1,
+0,40,2,2,9,3,2,1,2,1,275,275,15,16,9,15,8,9,8,9,1,41,
+0,40,8,9,3,2,1,2,2,2,275,275,2,1,1,1,15,16,3,9,3,41,
+0,40,15,16,1,1,3,9,8,9,275,275,3,3,9,3,8,1,2,1,3,41,
+0,40,2,2,3,3,1,2,15,16,1,1,1,8,9,10,8,1,3,1,1,41,
+0,40,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,41
+</data>
+ </layer>
+ <layer id="3" name="walls" width="22" height="13">
+  <data encoding="csv">
+0,51,199,200,199,200,199,200,148,148,148,148,148,148,148,148,199,199,199,199,200,53,
+0,75,223,224,223,224,223,224,172,172,172,172,172,172,172,172,223,223,223,223,224,77,
+0,74,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,74,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,170,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,170,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,50,
+0,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,74,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,254,
+0,267,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,269
+</data>
+ </layer>
+ <layer id="2" name="decor" width="22" height="13">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,114,64,0,0,0,0,0,63,63,0,0,0,0,0,0,64,0,0,0,
+0,0,0,138,88,0,0,0,0,0,87,87,0,0,0,0,0,0,88,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="5" name="objects">
+  <object id="2" name="collision" x="21" y="28.5" width="5" height="66.5"/>
+  <object id="3" name="collision" x="21" y="127" width="5.5" height="64.5"/>
+  <object id="4" name="collision" x="21" y="190.235" width="326.437" height="17.7652"/>
+  <object id="6" name="collision" x="341" y="128.5" width="6" height="63"/>
+  <object id="7" name="collision" x="341.5" y="29.5" width="5" height="65.5"/>
+  <object id="10" name="door_north" x="159.5" y="2" width="32.5" height="26.5">
+   <properties>
+    <property name="direction" value="north"/>
+    <property name="requires_key" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="18" name="collision" x="21.5" y="12" width="136.5" height="18.5"/>
+  <object id="19" name="collision" x="193" y="12.5" width="153" height="17.5"/>
+  <object id="25" name="door_west" x="18.5" y="96.5" width="8" height="29">
+   <properties>
+    <property name="direction" value="west"/>
+    <property name="locked_until_clear" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="26" name="door_east" x="339.5" y="96.5" width="10.5" height="30.5">
+   <properties>
+    <property name="direction" value="east"/>
+    <property name="locked_until_clear" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="47" name="collision" x="63.934" y="28.5765" width="15.9835" height="17.9209"/>
+  <object id="48" name="collision" x="157.897" y="28.0922" width="35.3574" height="18.8896"/>
+  <object id="49" name="collision" x="287.703" y="28.0922" width="16.9522" height="17.4365"/>
+  <object id="50" name="m2_3_pit_01" x="78.9487" y="95.4166" width="194.708" height="32.4513"/>
+  <object id="51" name="m2_3_pit_02" x="158.866" y="46.0131" width="35.3574" height="130.29"/>
+  <object id="52" name="spawn_player" x="29.0609" y="106.072">
+   <point/>
+  </object>
+  <object id="53" name="spawn_enemy" x="64.9026" y="67.3244">
+   <point/>
+  </object>
+  <object id="54" name="spawn_enemy" x="55.2157" y="139.008">
+   <point/>
+  </object>
+  <object id="55" name="spawn_enemy" x="134.164" y="152.57">
+   <point/>
+  </object>
+  <object id="56" name="spawn_enemy" x="142.883" y="60.0592">
+   <point/>
+  </object>
+  <object id="57" name="spawn_enemy" x="198.098" y="71.1992">
+   <point/>
+  </object>
+  <object id="58" name="spawn_enemy" x="201.973" y="154.023">
+   <point/>
+  </object>
+  <object id="59" name="spawn_enemy" x="219.41" y="176.303">
+   <point/>
+  </object>
+  <object id="60" name="spawn_enemy" x="234.909" y="152.57">
+   <point/>
+  </object>
+  <object id="61" name="spawn_enemy" x="314.342" y="117.212">
+   <point/>
+  </object>
+  <object id="62" name="spawn_enemy" x="317.248" y="153.538">
+   <point/>
+  </object>
+  <object id="63" name="spawn_enemy" x="290.609" y="98.3227">
+   <point/>
+  </object>
+  <object id="64" name="spawn_enemy" x="48.4348" y="171.944">
+   <point/>
+  </object>
+  <object id="66" name="spike_permanents" gid="24" x="79" y="80" width="16" height="16"/>
+  <object id="67" name="spike_permanents" gid="24" x="92.3333" y="65" width="16" height="16"/>
+  <object id="68" name="spike_permanents" gid="24" x="95.6667" y="78.3333" width="16" height="16"/>
+  <object id="69" name="spike_permanents" gid="24" x="112" y="79.3333" width="16" height="16"/>
+  <object id="70" name="spike_permanents" gid="24" x="79.4545" y="175.394" width="16" height="16"/>
+  <object id="71" name="spike_permanents" gid="24" x="111.667" y="160.333" width="16" height="16"/>
+  <object id="72" name="spike_permanents" gid="24" x="95.3636" y="160.182" width="16" height="16"/>
+  <object id="73" name="spike_permanents" gid="24" x="112.333" y="176.333" width="16" height="16"/>
+  <object id="74" name="spike_permanents" gid="24" x="79.1818" y="160.455" width="16" height="16"/>
+  <object id="75" name="spike_permanents" gid="24" x="96.6667" y="176.667" width="16" height="16"/>
+  <object id="76" name="spike_permanents" gid="24" x="239.333" y="177.333" width="16" height="16"/>
+  <object id="77" name="spike_permanents" gid="24" x="256.333" y="159.333" width="16" height="16"/>
+  <object id="78" name="spike_permanents" gid="24" x="256" y="79" width="16" height="16"/>
+  <object id="79" name="spike_permanents" gid="24" x="240" y="80" width="16" height="16"/>
+  <object id="80" name="spike_permanents" gid="24" x="224" y="79.6667" width="16" height="16"/>
+  <object id="81" name="spike_permanents" gid="24" x="256.333" y="177.667" width="16" height="16"/>
+  <object id="82" name="spike_permanents" gid="24" x="239.125" y="159.625" width="16" height="16"/>
+  <object id="83" name="m2_3_chest_01" gid="321" x="288" y="80" width="16" height="16"/>
+ </objectgroup>
+</map>

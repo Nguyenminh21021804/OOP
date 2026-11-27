@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+ <tileset firstgid="1" source="item.tsx"/>
+ <object name="spike_cycle" type="spike_trap" gid="91" width="16" height="16">
+  <properties>
+   <property name="damage" type="int" value="5"/>
+   <property name="mode" value="cycle"/>
+   <property name="off_ms" type="int" value="1800"/>
+   <property name="offset_ms" type="int" value="0"/>
+   <property name="on_ms" type="int" value="1200"/>
+  </properties>
+ </object>
+</template>

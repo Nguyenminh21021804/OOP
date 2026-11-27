@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+ <tileset firstgid="1" source="item.tsx"/>
+ <object name="fire_permanent" type="fire_trap" gid="44" width="16" height="32" rotation="90">
+  <properties>
+   <property name="damage" type="int" value="5"/>
+   <property name="dir" value="west"/>
+   <property name="group" value="fire_button"/>
+   <property name="mode" value="permanent"/>
+   <property name="range" type="int" value="2"/>
+  </properties>
+ </object>
+</template>

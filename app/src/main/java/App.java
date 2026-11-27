@@ -3,6 +3,7 @@
 import screens.InfoScreen;
 import de.gurkenlabs.litiengine.Game;
 import screens.MainMenuScreen;
+import screens.PlayScreen;
 import de.gurkenlabs.litiengine.gui.screens.Resolution;
 
 public class App {
@@ -17,8 +18,8 @@ public class App {
         Game.screens().add(new InfoScreen("SETTINGS", "Settings"));
         Game.screens().add(new InfoScreen("HOWTOPLAY", "How to Play"));
         Game.screens().add(new InfoScreen("CREDITS", "Credits"));
+        Game.screens().add(new PlayScreen());
         Game.screens().display(MainMenuScreen.NAME);
-
         Game.start();
     }
 }

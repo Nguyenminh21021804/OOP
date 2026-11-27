@@ -1,0 +1,482 @@
+package screens;
+
+import de.gurkenlabs.litiengine.Game;
+import de.gurkenlabs.litiengine.entities.CollisionBox;
+import de.gurkenlabs.litiengine.environment.Environment;
+import de.gurkenlabs.litiengine.environment.tilemap.IMap;
+import de.gurkenlabs.litiengine.environment.tilemap.IMapObject;
+import de.gurkenlabs.litiengine.environment.tilemap.IMapObjectLayer;
+import de.gurkenlabs.litiengine.gui.screens.GameScreen;
+import de.gurkenlabs.litiengine.input.Input;
+import de.gurkenlabs.litiengine.resources.Resources;
+import player.Player;
+import player.PlayerSkin;
+import traps.MapHazardLoader;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PlayScreen extends GameScreen {
+    public static final String NAME = "PLAY";
+
+    private static final String[] MAP_FILES = {
+        "Map_01.tmx",
+        "Map_01_challenge_room.tmx",
+        "Map_02_vuc_tham.tmx",
+        "Map_03_trap.tmx",
+        "Map_04_parkour.tmx",
+        "Map_04_challenge_room.tmx",
+        "Map_05_boss.tmx",
+        "Stage2_Map_01.tmx",
+        "Stage2_Map_02.tmx",
+        "Stage2_Map_03.tmx",
+        "Stage2_Map_04.tmx",
+        "Stage2_Map_05_Boss.tmx",
+        "Stage2_Secret_A.tmx",
+        "Stage2_Secret_B.tmx"
+    };
+
+    private Player player;
+    private int currentMapIndex = 0;
+    private double mapWidth = 352.0;
+    private double mapHeight = 208.0;
+    private String loadError = null;
+
+    private final Rectangle2D.Double nextMapButton = new Rectangle2D.Double();
+    private Font uiFont;
+
+    public PlayScreen() {
+        super(NAME);
+    }
+
+    @Override
+    protected void initializeComponents() {
+        try {
+            uiFont = Resources.fonts().get("font/PeaberryBase.ttf");
+        } catch (Exception e) {
+            uiFont = null;
+        }
+
+        // Click chuột trái vào nút "NEXT MAP >"
+        Input.mouse().onPressed(e -> {
+            if (Game.screens().current() != this) return;
+            if (e.getButton() != MouseEvent.BUTTON1) return;
+
+            Point2D mouse = Input.mouse().getLocation();
+            if (mouse != null && nextMapButton.contains(mouse)) {
+                nextMap();
+            }
+        });
+
+        // Chuyển tiếp toàn bộ phím bấm cho Player khi đang ở PlayScreen
+        Input.keyboard().onKeyPressed(e -> {
+            if (Game.screens().current() != this) return;
+            int code = e.getKeyCode();
+
+            if (code == KeyEvent.VK_ESCAPE) {
+                if (player != null) player.clearPressedKeys();
+                Game.world().unloadEnvironment();
+                Game.screens().display(MainMenuScreen.NAME);
+                return;
+            }
+
+            if (code == KeyEvent.VK_RIGHT) {
+                nextMap();
+                return;
+            }
+
+            if (code == KeyEvent.VK_LEFT) {
+                prevMap();
+                return;
+            }
+
+            if (code == KeyEvent.VK_F3) {
+                boolean next = !Game.config().debug().renderCollisionBoxes();
+                Game.config().debug().setDebugEnabled(next);
+                Game.config().debug().setRenderCollisionBoxes(next);
+                Game.config().debug().setRenderBoundingBoxes(next);
+                return;
+            }
+
+            if (player != null) {
+                player.handleKeyPressed(code);
+            }
+        });
+
+        Input.keyboard().onKeyReleased(e -> {
+            if (player != null) {
+                player.handleKeyReleased(e.getKeyCode());
+            }
+        });
+    }
+
+    @Override
+    public void prepare() {
+        super.prepare();
+        currentMapIndex = 0;
+        if (!ensurePlayerReady()) {
+            return;
+        }
+        loadMapByIndex(currentMapIndex);
+    }
+
+    private boolean ensurePlayerReady() {
+        if (player != null) {
+            player.clearPressedKeys();
+            if (player.isDead()) {
+                player.revive();
+            }
+            return true;
+        }
+
+        try {
+            player = new Player(0, 0, PlayerSkin.KNIGHT_01);
+            return true;
+        } catch (Throwable ex) {
+            loadError = "Loi khoi tao Player: " + ex.getClass().getSimpleName() + " - " + ex.getMessage();
+            System.err.println("[PlayScreen] " + loadError);
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    private void nextMap() {
+        currentMapIndex = (currentMapIndex + 1) % MAP_FILES.length;
+        loadMapByIndex(currentMapIndex);
+    }
+
+    private void prevMap() {
+        currentMapIndex = (currentMapIndex - 1 + MAP_FILES.length) % MAP_FILES.length;
+        loadMapByIndex(currentMapIndex);
+    }
+
+    private void loadMapByIndex(int index) {
+        Game.world().unloadEnvironment();
+        loadError = null;
+
+        if (!ensurePlayerReady()) {
+            return;
+        }
+
+        String mapPath = "maps/" + MAP_FILES[index];
+        try {
+            IMap map = Resources.maps().get(mapPath);
+            if (map == null) {
+                loadError = "Khong tim thay file: " + mapPath;
+                System.err.println("[PlayScreen] " + loadError);
+                return;
+            }
+
+            mapWidth = map.getSizeInPixels().getWidth();
+            mapHeight = map.getSizeInPixels().getHeight();
+
+            Environment env = new Environment(map);
+            List<Rectangle2D> wallRects = new ArrayList<>();
+
+            double spawnX = mapWidth / 2.0 - player.getWidth() / 2.0;
+            double spawnY = mapHeight / 2.0 - player.getHeight() / 2.0;
+
+            for (IMapObjectLayer layer : map.getMapObjectLayers()) {
+                for (IMapObject obj : layer.getMapObjects()) {
+                    String name = (obj.getName() != null) ? obj.getName() : "";
+                    if ("collision".equalsIgnoreCase(name) || name.startsWith("door_")) {
+                        if (obj.getWidth() > 0 && obj.getHeight() > 0) {
+                            CollisionBox box = new CollisionBox();
+                            box.setLocation(obj.getX(), obj.getY());
+                            box.setWidth(obj.getWidth());
+                            box.setHeight(obj.getHeight());
+                            box.setCollisionBoxWidth(obj.getWidth());
+                            box.setCollisionBoxHeight(obj.getHeight());
+                            box.setCollision(true);
+                            env.add(box);
+                            wallRects.add(new Rectangle2D.Double(obj.getX(), obj.getY(), obj.getWidth(), obj.getHeight()));
+                        }
+                    } else if ("spawn_player".equalsIgnoreCase(name)) {
+                        spawnX = obj.getX() - player.getWidth() / 2.0;
+                        spawnY = obj.getY() - player.getHeight();
+                    }
+                }
+            }
+
+            // Nạp toàn bộ bẫy gai, bẫy lửa (kể cả template .tx) và vùng hố bẫy của map
+            MapHazardLoader.LoadResult hazards = MapHazardLoader.loadHazards(
+                    MAP_FILES[index], env, player, wallRects
+            );
+            player.setMapPits(hazards.pits);
+
+            // Đặt nhân vật tại điểm spawn, đẩy nhẹ nếu sát tường hoặc hố, rồi lưu vị trí an toàn
+            player.setLocation(spawnX, spawnY);
+            nudgeOutOfHazards(wallRects, hazards.pits);
+            player.recordSafePosition();
+
+            // Chuyển map mới -> luôn chạy hiệu ứng spawn của nhân vật
+            player.clearPressedKeys();
+            if (player.isDead()) {
+                player.revive();
+            } else {
+                player.triggerSpawn();
+            }
+
+            env.add(player);
+            Game.world().loadEnvironment(env);
+
+            if (Game.world().camera() != null) {
+                Game.world().camera().setClampToMap(false);
+                updateCamera();
+            }
+
+            System.out.println("[PlayScreen] Loaded " + mapPath
+                    + " (" + (int) mapWidth + "x" + (int) mapHeight
+                    + "), colliders=" + wallRects.size()
+                    + ", traps=" + hazards.trapCount
+                    + ", pits=" + hazards.pits.size());
+        } catch (Exception ex) {
+            loadError = "Loi nap " + mapPath + ": " + ex.getMessage();
+            ex.printStackTrace();
+        }
+    }
+
+    /** Nếu điểm spawn nằm sát/trùng tường hoặc hố thì tự đẩy nhẹ về tâm phòng */
+    private void nudgeOutOfHazards(List<Rectangle2D> wallRects, List<Rectangle2D> pitRects) {
+        double centerX = mapWidth / 2.0;
+        double centerY = mapHeight / 2.0;
+
+        for (int attempt = 0; attempt < 24; attempt++) {
+            boolean blocked = false;
+            for (Rectangle2D wall : wallRects) {
+                if (player.getHitbox().intersectsFoot(wall)) {
+                    blocked = true;
+                    break;
+                }
+            }
+            if (!blocked) {
+                for (Rectangle2D pit : pitRects) {
+                    if (player.getHitbox().intersectsFoot(pit)) {
+                        blocked = true;
+                        break;
+                    }
+                }
+            }
+            if (!blocked) return;
+
+            double vx = centerX - (player.getX() + player.getWidth() / 2.0);
+            double vy = centerY - (player.getY() + player.getHeight() / 2.0);
+            double len = Math.hypot(vx, vy);
+            if (len < 0.001) return;
+
+            player.setLocation(player.getX() + (vx / len) * 4.0, player.getY() + (vy / len) * 4.0);
+        }
+    }
+
+    private void updateCamera() {
+        if (Game.world().camera() == null || Game.window().getResolution() == null) return;
+
+        double resW = Game.window().getResolution().getWidth();
+        double resH = Game.window().getResolution().getHeight();
+        if (resW <= 0 || resH <= 0 || mapWidth <= 0 || mapHeight <= 0) return;
+
+        double targetRenderScale = Math.min(resW / mapWidth, resH / mapHeight);
+
+        float curZoom = Game.world().camera().getZoom();
+        float curRenderScale = Game.world().camera().getRenderScale();
+        float baseScale = (curZoom > 0.0001f && curRenderScale > 0.0001f)
+                ? (curRenderScale / curZoom)
+                : Game.graphics().getBaseRenderScale();
+        if (baseScale <= 0.0001f) {
+            baseScale = 1.0f;
+        }
+
+        float finalZoom = (float) (targetRenderScale / baseScale);
+        Game.world().camera().setZoom(finalZoom, 0);
+        Game.world().camera().setFocus(mapWidth / 2.0, mapHeight / 2.0);
+        Game.world().camera().updateFocus();
+    }
+
+    @Override
+    public void render(Graphics2D g) {
+        Viewport v = Viewport.current();
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, (int) Math.ceil(v.w), (int) Math.ceil(v.h));
+
+        if (loadError == null) {
+            updateCamera();
+            super.render(g);
+        } else {
+            g.setColor(Color.RED);
+            g.setFont(new Font("Monospaced", Font.BOLD, 16));
+            g.drawString(loadError, 24, 90);
+        }
+
+        drawTopOverlay(g, v);
+
+        if (player != null) {
+            drawHud(g, v);
+            if (player.isDead()) {
+                drawLoseOverlay(g, v);
+            }
+        }
+    }
+
+    private void drawTopOverlay(Graphics2D g, Viewport v) {
+        double k = v.k;
+        int pad = (int) Math.round(14 * k);
+        int topY = (int) Math.round(v.offsetY + 14 * k);
+
+        Font labelFont = (uiFont != null)
+                ? uiFont.deriveFont(Font.BOLD, (float) Math.max(12, 13 * k))
+                : new Font("Monospaced", Font.BOLD, (int) Math.max(12, 13 * k));
+        g.setFont(labelFont);
+        FontMetrics fm = g.getFontMetrics();
+        int barH = (int) Math.round(34 * k);
+
+        String mapInfo = String.format("[%d/%d] %s",
+                currentMapIndex + 1, MAP_FILES.length, MAP_FILES[currentMapIndex]);
+        int infoW = fm.stringWidth(mapInfo) + (int) Math.round(24 * k);
+        int infoX = (int) Math.round((v.w - infoW) / 2.0);
+
+        g.setColor(new Color(20, 18, 26, 210));
+        g.fillRect(infoX, topY, infoW, barH);
+        g.setColor(new Color(145, 130, 105));
+        g.setStroke(new BasicStroke((float) Math.max(1.5, 2.0 * k)));
+        g.drawRect(infoX, topY, infoW, barH);
+
+        g.setColor(new Color(240, 230, 200));
+        int infoTextY = topY + (barH - fm.getHeight()) / 2 + fm.getAscent();
+        g.drawString(mapInfo, infoX + (int) Math.round(12 * k), infoTextY);
+
+        String btnText = "NEXT MAP >";
+        int btnW = Math.max((int) Math.round(144 * k), fm.stringWidth(btnText) + (int) Math.round(28 * k));
+        int btnX = (int) Math.round(v.w) - pad - btnW;
+        nextMapButton.setRect(btnX, topY, btnW, barH);
+
+        Point2D mouse = Input.mouse().getLocation();
+        boolean hovered = (mouse != null && nextMapButton.contains(mouse));
+
+        g.setColor(hovered ? new Color(180, 115, 45, 240) : new Color(42, 36, 52, 230));
+        g.fillRect(btnX, topY, btnW, barH);
+        g.setColor(hovered ? new Color(255, 225, 130) : new Color(165, 145, 115));
+        g.drawRect(btnX, topY, btnW, barH);
+
+        g.setColor(hovered ? Color.WHITE : new Color(240, 225, 195));
+        int btnTextX = btnX + (btnW - fm.stringWidth(btnText)) / 2;
+        int btnTextY = topY + (barH - fm.getHeight()) / 2 + fm.getAscent();
+        g.drawString(btnText, btnTextX, btnTextY);
+    }
+
+    private void drawHud(Graphics2D g, Viewport v) {
+        double k = v.k;
+        int padX = (int) Math.round(14 * k);
+        int padY = (int) Math.round(v.offsetY + 14 * k);
+        int boxW = (int) Math.round(205 * k);
+        int boxH = (int) Math.round(86 * k);
+
+        g.setColor(new Color(24, 20, 28, 220));
+        g.fillRect(padX, padY, boxW, boxH);
+        g.setColor(new Color(140, 125, 100));
+        g.drawRect(padX, padY, boxW, boxH);
+
+        int barX = padX + (int) Math.round(12 * k);
+        int barW = boxW - (int) Math.round(24 * k);
+        int barH = (int) Math.round(16 * k);
+
+        g.setFont(new Font("Monospaced", Font.BOLD, (int) Math.max(11, 12 * k)));
+
+        int hpY = padY + (int) Math.round(10 * k);
+        drawStatBar(g, barX, hpY, barW, barH, player.getHp(), player.getMaxHp(),
+                new Color(210, 45, 45), "HP: " + player.getHp() + "/" + player.getMaxHp());
+
+        int armorY = hpY + (int) Math.round(24 * k);
+        drawStatBar(g, barX, armorY, barW, barH, player.getArmor(), player.getMaxArmor(),
+                new Color(155, 175, 195), "ARMOR: " + player.getArmor() + "/" + player.getMaxArmor());
+
+        int manaY = armorY + (int) Math.round(24 * k);
+        drawStatBar(g, barX, manaY, barW, barH, player.getMana(), player.getMaxMana(),
+                new Color(45, 125, 230), "MANA: " + player.getMana() + "/" + player.getMaxMana());
+
+        long dashCd = player.getDashCooldownRemainingMs();
+        String dashText = (dashCd == 0) ? "OK" : (dashCd + "ms");
+        String weaponText = "None";
+        String skillText = "OK";
+        if (player.getCurrentWeapon() != null) {
+            weaponText = player.getCurrentWeapon().getName();
+            long skillCd = player.getCurrentWeapon().getSkillCooldownRemainingMs();
+            skillText = (skillCd == 0) ? "OK" : (skillCd + "ms");
+        }
+        String statusLine = player.getSkin().getDisplayName()
+                + " | " + weaponText + " (Q:DoiVK, V:Up)"
+                + " | J:Danh | U:Skill(" + skillText + ")"
+                + " | K:Dash(" + dashText + ")"
+                + " | C:DoiNV | F3:Hitbox";
+
+        int bottomH = (int) Math.round(26 * k);
+        int bottomY = (int) Math.round(v.h) - bottomH - (int) Math.round(8 * k);
+        g.setColor(new Color(18, 16, 22, 195));
+        g.fillRect(padX, bottomY, (int) Math.round(v.w) - padX * 2, bottomH);
+        g.setColor(new Color(235, 230, 215));
+        g.drawString(statusLine, padX + (int) Math.round(10 * k), bottomY + (int) Math.round(17 * k));
+
+        String notice = player.getActiveNotice();
+        if (!notice.isEmpty()) {
+            g.setColor(new Color(255, 225, 120));
+            g.drawString(notice, padX, padY + boxH + (int) Math.round(18 * k));
+        }
+    }
+
+    private void drawStatBar(Graphics2D g, int x, int y, int w, int h, int val, int max, Color color, String label) {
+        g.setColor(new Color(45, 40, 50));
+        g.fillRect(x, y, w, h);
+
+        int fillW = (max > 0) ? (int) Math.round((double) val / max * w) : 0;
+        g.setColor(color);
+        g.fillRect(x, y, fillW, h);
+
+        g.setColor(new Color(15, 10, 15));
+        g.drawRect(x, y, w, h);
+
+        g.setColor(Color.WHITE);
+        g.drawString(label, x + 6, y + h - 4);
+    }
+
+    private void drawLoseOverlay(Graphics2D g, Viewport v) {
+        double k = v.k;
+        int screenW = (int) Math.round(v.w);
+        int centerY = (int) Math.round(v.h * 0.44);
+
+        g.setColor(new Color(0, 0, 0, 130));
+        g.fillRect(0, 0, screenW, (int) Math.ceil(v.h));
+
+        Font loseFont;
+        try {
+            loseFont = Resources.fonts().get("font/DungeonFont.ttf").deriveFont((float) (84 * k));
+        } catch (Exception e) {
+            loseFont = new Font("Monospaced", Font.BOLD, (int) Math.max(36, 72 * k));
+        }
+
+        g.setFont(loseFont);
+        FontMetrics fm = g.getFontMetrics();
+        String msg = "YOU DIED";
+        int tx = (screenW - fm.stringWidth(msg)) / 2;
+        int sh = Math.max(2, (int) Math.round(4 * k));
+
+        g.setColor(new Color(20, 5, 5));
+        g.drawString(msg, tx + sh, centerY + sh);
+        g.setColor(new Color(235, 50, 50));
+        g.drawString(msg, tx, centerY);
+
+        g.setFont(new Font("Monospaced", Font.BOLD, (int) Math.max(12, 16 * k)));
+        String subMsg = "An [R] de hoi sinh  |  An [ESC] de ve Menu";
+        int subX = (screenW - g.getFontMetrics().stringWidth(subMsg)) / 2;
+        g.setColor(new Color(230, 210, 170));
+        g.drawString(subMsg, subX, centerY + (int) Math.round(45 * k));
+    }
+}

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="22" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="62">
+ <tileset firstgid="1" source="room_items.tsx"/>
+ <tileset firstgid="101" source="room_frame.tsx"/>
+ <tileset firstgid="149" source="item.tsx"/>
+ <tileset firstgid="241" source="floor_traps.tsx"/>
+ <layer id="1" name="ground" width="22" height="13">
+  <data encoding="csv">
+7,9,30,30,18,8,19,17,20,7,17,7,7,30,30,30,18,7,19,29,9,28,
+17,20,27,17,28,7,8,18,29,17,17,28,17,19,19,7,20,10,10,9,28,17,
+8,10,8,10,27,28,9,18,9,7,30,28,7,30,28,18,27,28,20,8,29,8,
+20,8,20,20,30,79,79,79,28,9,17,18,20,20,27,79,79,79,29,28,30,27,
+28,9,30,19,8,79,79,79,29,17,30,8,19,8,10,79,79,79,27,20,27,17,
+10,28,20,30,17,79,79,79,7,18,9,30,7,19,19,27,9,29,8,28,27,17,
+27,17,9,27,10,20,20,17,19,19,20,29,9,8,10,28,10,10,17,30,9,18,
+10,7,19,8,8,10,17,10,19,10,30,28,18,18,27,29,27,27,10,27,17,17,
+19,20,18,9,28,79,79,79,20,28,28,7,27,10,27,79,79,79,17,28,19,10,
+20,30,17,9,29,79,79,79,19,29,10,28,18,9,17,79,79,79,17,7,27,7,
+17,28,18,8,10,79,79,79,29,29,19,28,27,20,19,28,18,8,10,8,20,19,
+10,28,9,20,8,18,30,10,28,18,28,30,19,19,20,18,9,17,9,8,17,19,
+29,27,10,17,7,29,30,20,30,19,19,18,20,27,28,17,20,18,10,9,17,30
+</data>
+ </layer>
+ <layer id="2" name="walls" width="22" height="13">
+  <data encoding="csv">
+1,2,3,4,2,5,5,4,4,3,2,5,2,2,2,2,5,4,3,2,2,6,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,36,
+11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+31,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,
+21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,
+41,5,44,42,42,42,45,43,42,43,44,44,45,44,42,43,45,42,44,45,45,46
+</data>
+ </layer>
+ <layer id="3" name="decor" width="22" height="13">
+  <data encoding="csv">
+0,0,0,185,0,0,161,0,0,0,0,0,0,0,0,0,161,0,0,185,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,157,60,0,0,0,0,69,0,0,0,0,0,50,0,0,0,0,0,69,2147483805,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,156,0,0,0,0,0,0,0,0,0,0,78,0,0,0,0,0,0,0,149,0,
+0,0,0,78,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,69,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,156,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,149,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2147483805,0,
+0,157,78,0,0,0,0,0,0,0,0,69,0,0,0,0,0,78,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="4" name="objects">
+  <object id="30" name="collision" x="14.75" y="0.75" width="324.5" height="14"/>
+  <object id="31" name="collision" x="14.75" y="199.25" width="324.5" height="9.5"/>
+  <object id="32" name="collision" x="8.5" y="14.25" width="7.5" height="64.5"/>
+  <object id="33" name="collision" x="8.5" y="112.75" width="7" height="86.5"/>
+  <object id="34" name="collision" x="337.5" y="15.25" width="6.5" height="64.5"/>
+  <object id="35" name="collision" x="336.5" y="111.25" width="7.5" height="88.5"/>
+  <object id="36" name="collision" x="18.5" y="120.25" width="9" height="7.5"/>
+  <object id="37" name="collision" x="20" y="71.25" width="9" height="7.5"/>
+  <object id="38" name="collision" x="323" y="73.25" width="9" height="7.5"/>
+  <object id="39" name="collision" x="323" y="122.25" width="9" height="7.5"/>
+  <object id="40" name="door_west" x="8" y="81" width="8" height="31.6667">
+   <properties>
+    <property name="direction" value="west"/>
+    <property name="locked_until_clear" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="41" name="door_east" x="335.25" y="79.5833" width="10.5" height="32.1667">
+   <properties>
+    <property name="direction" value="east"/>
+    <property name="locked_until_clear" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="45" name="spawn_player" x="23" y="95.5">
+   <properties>
+    <property name="entry" value="west"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="47" name="pit_09" type="pit" x="80.8333" y="48.3333" width="48.3333" height="47.6667">
+   <properties>
+    <property name="damage" type="int" value="20"/>
+   </properties>
+  </object>
+  <object id="48" name="pit_10" type="pit" x="79.6667" y="128.333" width="48.6667" height="48">
+   <properties>
+    <property name="damage" type="int" value="20"/>
+   </properties>
+  </object>
+  <object id="49" name="pit_11" type="pit" x="239.667" y="48.3333" width="48.3333" height="31.3333">
+   <properties>
+    <property name="damage" type="int" value="20"/>
+   </properties>
+  </object>
+  <object id="50" name="pit_12" type="pit" x="240" y="128" width="48.6667" height="32">
+   <properties>
+    <property name="damage" type="int" value="20"/>
+   </properties>
+  </object>
+  <object id="52" name="spawn_enemy" x="147.333" y="168.667">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="53" name="spawn_enemy" x="226.667" y="179.333">
+   <properties>
+    <property name="delay" type="int" value="10"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="54" name="spawn_enemy" x="163.333" y="101">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="55" name="spawn_enemy" x="237.333" y="31.6667">
+   <properties>
+    <property name="delay" type="int" value="10"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="56" name="spawn_enemy" x="146" y="27.6667">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="57" name="spawn_enemy" x="306" y="63">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="58" name="spawn_enemy" x="308.667" y="174">
+   <properties>
+    <property name="delay" type="int" value="10"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="59" name="spawn_boss" x="216.333" y="105">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="boss"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="60" name="spawn_enemy" x="85" y="31">
+   <properties>
+    <property name="delay" type="int" value="0"/>
+    <property name="enemyType" value="goblin"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="61" name="chest_04" type="chess" gid="173" x="171.333" y="62.3333" width="16" height="16">
+   <properties>
+    <property name="loot" value="coin"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>
