@@ -91,7 +91,11 @@ public class MainMenuScreen extends GameScreen {
         super.render(g);
     }
 
+<<<<<<< HEAD
     private void onNewGame() { Game.screens().display(CharacterSelectScreen.NAME); }
+=======
+    private void onNewGame()   { Game.screens().display(GamePlayScreen.NAME); }
+>>>>>>> origin/feat/enemy-v2
     private void onSettings()  { Game.screens().display("SETTINGS"); }
     private void onHowToPlay() { Game.screens().display("HOWTOPLAY"); }
     private void onCredits()   { Game.screens().display("CREDITS"); }

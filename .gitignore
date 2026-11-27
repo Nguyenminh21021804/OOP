@@ -53,3 +53,10 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .DS_Store
+
+# Rác phát sinh trong repo
+bin/
+**/bin/
+crash.txt
+**/crash.txt
+config.properties
