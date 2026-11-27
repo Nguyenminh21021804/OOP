@@ -6,6 +6,8 @@ import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import de.gurkenlabs.litiengine.graphics.IRenderable;
 import de.gurkenlabs.litiengine.graphics.ImageRenderer;
 import de.gurkenlabs.litiengine.graphics.Spritesheet;
+import de.gurkenlabs.litiengine.graphics.animation.Animation;
+import de.gurkenlabs.litiengine.graphics.animation.AnimationController;
 import de.gurkenlabs.litiengine.resources.Resources;
 import entities.Enemy;
 import entities.MonsterType;
@@ -40,6 +42,48 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
 
     public ShamanEnemy() {
         super(MonsterType.ORC_SHAMAN);
+        this.setName("");
+        initAnimations();
+    }
+
+    private void initAnimations() {
+        if (this.animations() == null) return;
+
+        Spritesheet idleSheet = Resources.spritesheets().get("orc-shaman-idle");
+        Spritesheet walkSheet = Resources.spritesheets().get("orc-shaman-walk");
+
+        if (idleSheet != null) {
+            Animation idleRight = new Animation("orc-shaman-idle-right", idleSheet, true);
+            Animation idleLeft = AnimationController.flippedAnimation(idleRight, "orc-shaman-idle-left", false);
+            this.animations().add(idleRight);
+            this.animations().add(idleLeft);
+            this.animations().add(new Animation("orc-shaman-idle", idleSheet, true));
+            this.animations().setDefault(idleRight);
+        }
+
+        if (walkSheet != null) {
+            Animation walkRight = new Animation("orc-shaman-walk-right", walkSheet, true);
+            Animation walkLeft = AnimationController.flippedAnimation(walkRight, "orc-shaman-walk-left", false);
+            this.animations().add(walkRight);
+            this.animations().add(walkLeft);
+            this.animations().add(new Animation("orc-shaman-walk", walkSheet, true));
+        }
+
+        this.animations().addRule(
+            c -> isMoving(),
+            c -> (this.getFacingDirection() == Direction.LEFT) ? "orc-shaman-walk-left" : "orc-shaman-walk-right"
+        );
+        this.animations().addRule(
+            c -> !isMoving(),
+            c -> (this.getFacingDirection() == Direction.LEFT) ? "orc-shaman-idle-left" : "orc-shaman-idle-right"
+        );
+    }
+
+    public boolean isMoving() {
+        if (isCasting || isAttacking || target == null || target.isDead()) {
+            return false;
+        }
+        return isInDetectionRange(target);
     }
 
     /**
@@ -191,6 +235,14 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
         summonedMinions.removeIf(Enemy::isDead);
     }
 
+    @Override
+    public void loaded(de.gurkenlabs.litiengine.environment.Environment env) {
+        super.loaded(env);
+        if (env != null) {
+            env.add(this, de.gurkenlabs.litiengine.graphics.RenderType.OVERLAY);
+        }
+    }
+
     /**
      * Vẽ chi tiết Shaman cầm gậy phép đỏ và vòng ma thuật triệu hồi:
      * - Gậy phép được thu nhỏ tỉ lệ 0.65x (~19.5px chiều cao, vừa vặn chuẩn mực với thân Shaman 23px).
@@ -211,7 +263,9 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
             }
         }
 
-        Point2D centerLoc = Game.world().camera().getViewportLocation(this.getCenter());
+        Point2D centerLoc = (Game.world().camera() != null)
+                ? Game.world().camera().getViewportLocation(this.getCenter())
+                : this.getCenter();
 
         // 1. Vẽ cây gậy phép đỏ (weapon_red_magic_staff) với tỉ lệ vừa vặn (thu nhỏ 0.65x, chống giật)
         if (staffSpritesheet != null) {

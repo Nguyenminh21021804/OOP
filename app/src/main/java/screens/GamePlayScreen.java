@@ -1,39 +1,39 @@
 package screens;
 
 import de.gurkenlabs.litiengine.Game;
-import de.gurkenlabs.litiengine.entities.Creature;
 import de.gurkenlabs.litiengine.environment.Environment;
 import de.gurkenlabs.litiengine.environment.tilemap.MapOrientations;
 import de.gurkenlabs.litiengine.environment.tilemap.xml.TmxMap;
 import de.gurkenlabs.litiengine.graphics.Camera;
 import de.gurkenlabs.litiengine.graphics.RenderType;
 import de.gurkenlabs.litiengine.gui.screens.GameScreen;
-import de.gurkenlabs.litiengine.input.KeyboardEntityController;
-import entities.*;
+import de.gurkenlabs.litiengine.input.Input;
+import entities.DemonBossEnemy;
+import entities.TrainingDummy;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.geom.Point2D;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import de.gurkenlabs.litiengine.graphics.Spritesheet;
 import de.gurkenlabs.litiengine.resources.Resources;
-import entities.ranged.*;
-
-import static entities.Enemy.TEAM_ENEMY;
-import static entities.Enemy.TEAM_PLAYER;
 
 /**
  * GamePlayScreen — Màn hình đấu trường thử nghiệm (Battle Test Arena).
- * Có một Bia tập bắn (TrainingDummy) đứng yên ở giữa.
- * Toàn bộ các quái đánh xa sẽ liên tục lượn qua lại trái - phải (strafe)
- * và dồn hỏa lực bắn vào bia tập!
+ * Người chơi trực tiếp điều khiển Boss Ma Vương Khổng Lồ (Demon Lord Gerald)
+ * và tự do thi triển bộ kỹ năng để luyện tập trên Bia tập đánh (Training Dummy).
  */
 public class GamePlayScreen extends GameScreen {
     public static final String NAME = "GAMEPLAY";
 
-    private Creature player;
+    private DemonBossEnemy bossPlayer;
     private TrainingDummy dummy;
     private Environment environment;
+    private long screenEnteredTime = 0;
 
     public GamePlayScreen() {
         super(NAME);
@@ -46,20 +46,40 @@ public class GamePlayScreen extends GameScreen {
         initBattleArena();
     }
 
+    private boolean isGameplayActive() {
+        return Game.screens().current() != null && NAME.equals(Game.screens().current().getName());
+    }
+
     @Override
     public void prepare() {
         super.prepare();
+        this.screenEnteredTime = Game.time().now();
         loadAllMonsterSprites();
+        if (bossPlayer != null) {
+            bossPlayer.resetBossState();
+        }
         if (environment != null) {
             Game.world().loadEnvironment(environment);
             resetArena();
         }
+        if (Game.window() != null && Game.window().getRenderComponent() != null) {
+            Game.window().getRenderComponent().requestFocus();
+            Game.window().getRenderComponent().requestFocusInWindow();
+        }
     }
 
     /**
-     * Khởi tạo đấu trường, bù nhìn đứng yên và sinh quái.
+     * Khởi tạo đấu trường, Boss người chơi và bù nhìn tập đánh.
      */
     private void initBattleArena() {
+        // Tắt toàn bộ hiển thị debug tên và khung va chạm trôi nổi
+        Game.config().debug().setRenderEntityNames(false);
+        Game.config().debug().setDebugEnabled(false);
+        Game.config().debug().setRenderHitBoxes(false);
+        Game.config().debug().setRenderBoundingBoxes(false);
+        Game.config().debug().setRenderCollisionBoxes(false);
+        Game.config().debug().setShowMouseTargetMetric(false);
+
         TmxMap map = new TmxMap();
         map.setWidth(32);
         map.setHeight(18);
@@ -83,147 +103,226 @@ public class GamePlayScreen extends GameScreen {
             }
         }, RenderType.GROUND);
 
-        // 1. Tạo Bù Nhìn (TrainingDummy) đứng yên ở trung tâm phía trên (Team 1)
-        dummy = new TrainingDummy(512, 180);
+        // 1. Tạo Bù Nhìn (TrainingDummy) đứng yên CHÍNH GIỮA ĐẤU TRƯỜNG (512, 288) (Team 2)
+        dummy = new TrainingDummy(512, 288);
+        dummy.setTeam(2);
+        dummy.setName("");
         environment.add(dummy);
 
-        // 2. Tạo Người Chơi (Player) điều khiển bằng WASD / Mũi tên để quan sát (Team 2)
-        player = new Creature("doc");
-        player.setLocation(100, 480);
-        player.setTeam(TEAM_PLAYER);
-        player.setVelocity(120f);
-        player.getHitPoints().setMax(300);
-        player.getHitPoints().setValue(300);
-        player.addController(new KeyboardEntityController<>(player));
-        environment.add(player);
+        // 2. Tạo Boss Ma Vương do Người chơi trực tiếp điều khiển (Team 1)
+        bossPlayer = new DemonBossEnemy();
+        bossPlayer.setName("");
+        bossPlayer.setLocation(380, 288);
+        bossPlayer.setPlayerControlled(true);
+        bossPlayer.setTeam(1);
+        environment.add(bossPlayer);
 
-        // Vẽ vòng mục tiêu quanh Training Dummy
+        // Vòng tròn mục tiêu quanh Training Dummy
         environment.add(g -> {
             if (dummy != null && !dummy.isDead()) {
                 g.setColor(new Color(255, 60, 60, 180));
-                int dx = (int) dummy.getCenter().getX();
-                int dy = (int) dummy.getCenter().getY();
+                Point2D dView = (Game.world().camera() != null)
+                    ? Game.world().camera().getViewportLocation(dummy.getCenter())
+                    : dummy.getCenter();
+                int dx = (int) Math.round(dView.getX());
+                int dy = (int) Math.round(dView.getY());
                 g.drawOval(dx - 24, dy - 24, 48, 48);
                 g.setColor(Color.RED);
                 g.setFont(new Font("Monospaced", Font.BOLD, 12));
-                g.drawString("🎯 TARGET", dx - 30, dy + 35);
+                g.drawString("🎯 TRAINING DUMMY", dx - 55, dy + 35);
             }
         }, RenderType.OVERLAY);
 
-        // Camera khóa chuẩn giữa màn hình 1024x576 (không bị xô lệch lên trần)
+        // Camera khóa chuẩn giữa màn hình 1024x576
         Camera camera = new Camera();
         camera.setFocus(512, 288);
         Game.world().setCamera(camera);
 
-        // 3. Sinh toàn bộ quái xếp hàng ngang ở DƯỚI con dummy, mỗi con cách nhau 1 ô vuông (64px)
-        spawnAllEnemies();
+        // Đăng ký phím điều khiển
+        Input.keyboard().onKeyReleased(KeyEvent.VK_ESCAPE, e -> {
+            if (!isGameplayActive()) return;
+            Game.screens().display(MainMenuScreen.NAME);
+        });
+
+        Input.keyboard().onKeyReleased(KeyEvent.VK_R, e -> {
+            if (!isGameplayActive()) return;
+            resetArena();
+        });
+
+        // Chiêu 1: Cắn Xé Tàn Bạo (Bite / Chomp) bằng [SPACE] hoặc [J]
+        Input.keyboard().onKeyReleased(KeyEvent.VK_SPACE, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerBite();
+            }
+        });
+        Input.keyboard().onKeyReleased(KeyEvent.VK_J, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerBite();
+            }
+        });
+
+        // Chiêu 2: Phun Mưa Cầu Lửa (Hellfire Spit) bằng [Q] hoặc [K]
+        Input.keyboard().onKeyReleased(KeyEvent.VK_Q, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerFireSpit();
+            }
+        });
+        Input.keyboard().onKeyReleased(KeyEvent.VK_K, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerFireSpit();
+            }
+        });
+
+        // Chiêu 2b: Vòng Tròn Lửa 360 độ (Hellfire Ring) bằng [C] hoặc [L]
+        Input.keyboard().onKeyReleased(KeyEvent.VK_C, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerFireRing();
+            }
+        });
+        Input.keyboard().onKeyReleased(KeyEvent.VK_L, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerFireRing();
+            }
+        });
+
+        // Chiêu 3: Lao Húc Hủy Diệt (Charge / Bonk) bằng [SHIFT], [E] hoặc [H]
+        Input.keyboard().onKeyReleased(KeyEvent.VK_SHIFT, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerCharge();
+            }
+        });
+        Input.keyboard().onKeyReleased(KeyEvent.VK_E, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerCharge();
+            }
+        });
+        Input.keyboard().onKeyReleased(KeyEvent.VK_H, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.playerCharge();
+            }
+        });
+
+        // Chiêu 4: Bật/Tắt Cuồng Nộ Pha 2 (Enrage) bằng [F]
+        Input.keyboard().onKeyReleased(KeyEvent.VK_F, e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer != null && !bossPlayer.isDead()) {
+                bossPlayer.toggleEnrage();
+            }
+        });
+
+        // Fire on right-button press so the attack does not depend on a full click event.
+        Input.mouse().onPressed(e -> {
+            if (!isGameplayActive()) return;
+            if (bossPlayer == null || bossPlayer.isDead()) return;
+            if (Input.mouse().isRightButton(e) || e.getButton() == MouseEvent.BUTTON3) {
+                bossPlayer.playerFireSpit();
+            }
+        });
+
+        // Chuột trái = Cắn Xé
+        Input.mouse().onClicked(e -> {
+            if (!isGameplayActive()) return;
+            // Chống trôi cú click từ Menu chính khi vừa bấm "NEW GAME" vào màn chơi
+            if (Game.time().now() - screenEnteredTime < 150) return;
+            if (bossPlayer == null || bossPlayer.isDead()) return;
+            if (e.getButton() == MouseEvent.BUTTON1) {
+                bossPlayer.playerBite();
+            }
+        });
     }
 
     /**
-     * Sinh 5 quái vật tầm xa xếp hàng ngang ở DƯỚI con Dummy, mỗi con cách nhau 1 ô vuông (64px)
-     * và cùng dồn hỏa lực bắn thẳng lên con Dummy!
-     */
-    private void spawnAllEnemies() {
-        if (environment == null) return;
-
-        double rowY = 360; // Hàng ngang ở dưới con dummy (dummy ở Y=180)
-
-        // 1. Ice Zombie (bắn đạn băng)
-        IceZombieEnemy iceZombie = new IceZombieEnemy();
-        iceZombie.setLocation(384, rowY);
-        environment.add(iceZombie);
-
-        // 2. Imp (bắn mưa cầu lửa nhanh)
-        ImpEnemy imp = new ImpEnemy();
-        imp.setLocation(448, rowY);
-        environment.add(imp);
-
-        // 3. Doc (phóng dao găm - chính diện dưới Dummy)
-        DocEnemy doc = new DocEnemy();
-        doc.setLocation(512, rowY);
-        environment.add(doc);
-
-        // 4. Shaman (cầm gậy ma pháp)
-        ShamanEnemy shaman = new ShamanEnemy();
-        shaman.setLocation(576, rowY);
-        environment.add(shaman);
-
-        // 5. Lizard (bắn cung tên)
-        LizardEnemy lizard = new LizardEnemy();
-        lizard.setLocation(640, rowY);
-        environment.add(lizard);
-
-        // TẠM (xóa sau khi thử xong): quái chỉ phát hiện khi dummy ở rất gần, để thấy chúng đi tuần
-        for (Enemy e : new Enemy[] {iceZombie, imp, doc, shaman, lizard}) {
-            e.setDetectionRange(40);
-            e.setHearingRange(0);
-        }
-    }
-
-    /**
-     * Hồi sinh lại toàn bộ quái và đặt lại vị trí.
+     * Hồi phục và đặt lại vị trí cho Boss người chơi và bù nhìn.
      */
     private void resetArena() {
         if (environment == null) return;
 
-        // Xóa quái cũ an toàn tránh ConcurrentModificationException
+        // Dọn sạch các thực thể phụ (đạn, quái đệ tử nếu có)
         for (var entity : new java.util.ArrayList<>(environment.getCombatEntities())) {
-            if (entity != dummy && entity != player && entity.getTeam() == TEAM_ENEMY) {
+            if (entity != dummy && entity != bossPlayer) {
                 entity.die();
                 environment.remove(entity);
             }
         }
 
-        // Hồi máu bù nhìn và người chơi
+        // Hồi máu và đặt lại bù nhìn ở trung tâm
         if (dummy != null) {
+            dummy.resurrect();
             dummy.getHitPoints().setValue(dummy.getHitPoints().getMax());
-            dummy.setLocation(512, 180);
-        }
-        if (player != null) {
-            player.getHitPoints().setValue(player.getHitPoints().getMax());
-            player.setLocation(100, 480);
+            dummy.setLocation(512, 288);
+            dummy.setTeam(2);
         }
 
-        // Sinh lại quái
-        spawnAllEnemies();
+        // Hồi máu và đặt lại Boss người chơi
+        if (bossPlayer != null) {
+            bossPlayer.resurrect();
+            bossPlayer.resetBossState();
+            bossPlayer.getHitPoints().setValue(bossPlayer.getHitPoints().getMax());
+            bossPlayer.setLocation(380, 288);
+            bossPlayer.setTeam(1);
+        }
     }
 
     @Override
     public void render(Graphics2D g) {
         super.render(g);
-
-        // Vẽ giao diện HUD thông số chiến đấu
         drawHUD(g);
     }
 
     private void drawHUD(Graphics2D g) {
-        g.setFont(new Font("Monospaced", Font.BOLD, 14));
+        g.setFont(new Font("Monospaced", Font.BOLD, 13));
 
-        // Bảng thông tin góc trên bên trái
-        g.setColor(new Color(0, 0, 0, 180));
-        g.fillRect(15, 15, 460, 95);
+        // Bảng thông tin điều khiển Boss Ma Vương ở góc trên bên trái
+        g.setColor(new Color(15, 10, 25, 220));
+        g.fillRect(15, 15, 660, 133);
+        g.setColor(new Color(255, 60, 60));
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawRect(15, 15, 660, 133);
+
+        g.setColor(new Color(255, 175, 40));
+        g.drawString("👹 BẠN ĐANG ĐIỀU KHIỂN: BOSS MA VƯƠNG GERALD", 25, 36);
         g.setColor(Color.WHITE);
-        g.drawRect(15, 15, 460, 95);
-
-        g.setColor(Color.CYAN);
-        g.drawString("🎯 BIA TẬP BẮN (TRAINING DUMMY): ĐỨNG YÊN", 25, 38);
-        g.setColor(Color.GREEN);
-        g.drawString("QUÁI VẬT: Đang lượn TRÁI - PHẢI và dồn hỏa lực vào bia!", 25, 58);
+        g.drawString("WASD / Mũi tên: Di chuyển tự do | Chuột: Hướng mặt theo con trỏ", 25, 56);
+        g.drawString("[Chuột Trái] / [SPACE] / [J]: 🦷 Đòn Cắn (Tam giác báo trước 0.20s -> Táp 50 DMG)", 25, 76);
+        g.drawString("[Chuột Phải] / [Q]   / [K]: 🔥 Phun 5 Cầu Lửa Tỏa Hình Quạt (Hellfire)", 25, 94);
+        g.setColor(new Color(255, 140, 80));
+        g.drawString("[C] / [L]: 🌀 Vòng Tròn Lửa 360° (12 viên / Pha 2: 16 viên x 20 DMG)", 25, 112);
         g.setColor(Color.YELLOW);
-        g.drawString("WASD: Di chuyển tự do   |   [R] Đặt lại quái", 25, 78);
-        g.setColor(Color.LIGHT_GRAY);
-        g.drawString("[ESC] Quay về Menu chính", 25, 98);
+        g.drawString("[SHIFT] / [E] / [H]: ⚡ Lao Húc (Báo trước 0.20s hình chữ nhật 2x5 ô -> Bonk!) | [F]: Pha 2", 25, 130);
+
+        // Vẽ thanh máu Boss hoành tráng ở cạnh dưới màn hình
+        if (bossPlayer != null && !bossPlayer.isDead()) {
+            bossPlayer.renderHealthBar(g, Game.window().getWidth(), Game.window().getHeight());
+        }
     }
 
     private static boolean spritesLoaded = false;
 
     /**
-     * Tự động đăng ký toàn bộ spritesheet của quái vật vào Resources.spritesheets()
-     * để CreatureAnimationController của LITIengine tìm thấy và hiển thị ảnh quái.
+     * Tự động đăng ký toàn bộ spritesheet của Boss và các thực thể vào Resources.spritesheets()
      */
     public static void loadAllMonsterSprites() {
         if (spritesLoaded) return;
         spritesLoaded = true;
+
+        // 0. Boss Ma Vương (Big Demon) & Boss Gerald (Big Zombie) (kích thước 32x36 per frame)
+        loadSpritesheet("big_demon-idle", "sprites/monsters/big_demon-idle.png", 32, 36);
+        loadSpritesheet("big_demon-walk", "sprites/monsters/big_demon-walk.png", 32, 36);
+        loadSpritesheet("big_demon-move", "sprites/monsters/big_demon-walk.png", 32, 36);
+        loadSpritesheet("big_demon-bite", "sprites/monsters/big_demon-bite.png", 50, 36);
+        loadSpritesheet("big_demon-bite-left", "sprites/monsters/big_demon-bite-left.png", 50, 36);
+        loadSpritesheet("big_zombie-idle", "sprites/monsters/big_zombie-idle.png", 32, 36);
+        loadSpritesheet("big_zombie-walk", "sprites/monsters/big_zombie-walk.png", 32, 36);
+        loadSpritesheet("big_zombie-move", "sprites/monsters/big_zombie-walk.png", 32, 36);
 
         // 1. Quái đánh xa và vũ khí trong sprites/monsters
         loadSpritesheet("doc-idle", "sprites/monsters/doc-idle.png", 16, 23);
@@ -352,6 +451,9 @@ public class GamePlayScreen extends GameScreen {
             if (name.contains("-walk")) {
                 String moveName = name.replace("-walk", "-move");
                 registerSheet(moveName, sheet);
+                registerSheet(moveName + "-right", sheet);
+                registerSheet(moveName + "-down", sheet);
+                registerSheet(moveName + "-up", sheet);
                 Spritesheet leftSheet = Resources.spritesheets().get(name + "-left");
                 if (leftSheet != null) {
                     registerSheet(moveName + "-left", leftSheet);
@@ -359,6 +461,9 @@ public class GamePlayScreen extends GameScreen {
             } else if (name.contains("-move")) {
                 String walkName = name.replace("-move", "-walk");
                 registerSheet(walkName, sheet);
+                registerSheet(walkName + "-right", sheet);
+                registerSheet(walkName + "-down", sheet);
+                registerSheet(walkName + "-up", sheet);
                 Spritesheet leftSheet = Resources.spritesheets().get(name + "-left");
                 if (leftSheet != null) {
                     registerSheet(walkName + "-left", leftSheet);
