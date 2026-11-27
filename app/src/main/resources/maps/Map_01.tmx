@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="22" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="30">
+ <tileset firstgid="1" name="floor_traps" tilewidth="16" tileheight="16" tilecount="49" columns="7">
+  <image source="../sprites/0x72_DungeonTilesetII_v1.7/atlas_floor-16x16.png" width="112" height="112"/>
+ </tileset>
+ <tileset firstgid="50" name="walls_decor" tilewidth="16" tileheight="16" tilecount="192" columns="24">
+  <image source="../sprites/0x72_DungeonTilesetII_v1.7/atlas_walls_high-16x32.png" width="384" height="128"/>
+  <tile id="11">
+   <animation>
+    <frame tileid="15" duration="100"/>
+    <frame tileid="16" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="38">
+   <animation>
+    <frame tileid="36" duration="100"/>
+    <frame tileid="37" duration="100"/>
+    <frame tileid="38" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="40">
+   <animation>
+    <frame tileid="39" duration="100"/>
+    <frame tileid="40" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="84">
+   <animation>
+    <frame tileid="84" duration="100"/>
+    <frame tileid="85" duration="100"/>
+    <frame tileid="86" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="89">
+   <animation>
+    <frame tileid="36" duration="100"/>
+    <frame tileid="37" duration="100"/>
+    <frame tileid="38" duration="100"/>
+   </animation>
+  </tile>
+  <tile id="132">
+   <animation>
+    <frame tileid="132" duration="100"/>
+    <frame tileid="133" duration="100"/>
+    <frame tileid="134" duration="100"/>
+   </animation>
+  </tile>
+ </tileset>
+ <tileset firstgid="242" name="room_frame" tilewidth="16" tileheight="16" tilecount="48" columns="12">
+  <image source="../sprites/0x72_DungeonTilesetII_v1.7/atlas_walls_low-16x16.png" width="192" height="64"/>
+ </tileset>
+ <layer id="4" name="ground" width="22" height="13">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,40,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,41,
+0,40,3,9,10,3,2,2,1,1,2,8,9,8,1,3,1,8,9,2,1,41,
+0,40,8,9,2,10,2,2,1,8,1,15,16,8,9,10,3,15,16,1,3,41,
+0,40,8,3,3,10,8,9,8,1,3,2,2,1,3,10,3,8,9,3,3,41,
+0,40,2,3,9,10,15,16,1,3,1,1,2,3,9,10,3,9,9,10,1,41,
+0,1,1,2,9,2,2,1,2,8,9,1,3,2,3,10,8,9,9,9,8,1,
+0,1,2,8,9,2,1,8,1,8,3,2,1,15,9,10,1,9,3,9,10,1,
+0,40,2,2,9,3,2,1,2,1,2,1,15,16,9,15,8,9,8,9,1,41,
+0,40,8,9,3,2,1,2,2,2,1,2,2,1,1,1,15,16,3,9,3,41,
+0,40,15,16,1,1,3,9,8,9,1,3,3,3,9,3,8,1,2,1,3,41,
+0,40,2,2,3,3,1,2,15,16,1,1,1,8,9,10,8,1,3,1,1,41,
+0,40,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,41
+</data>
+ </layer>
+ <layer id="3" name="walls" width="22" height="13">
+  <data encoding="csv">
+0,51,199,200,199,200,199,200,148,148,148,148,148,148,148,148,199,199,199,199,200,53,
+0,75,223,224,223,224,223,224,172,172,172,172,172,172,172,172,223,223,223,223,224,77,
+0,74,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,74,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,170,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,170,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,50,
+0,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,74,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,122,
+0,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,254,
+0,267,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,268,269
+</data>
+ </layer>
+ <layer id="2" name="decor" width="22" height="13">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,210,211,212,213,0,0,0,0,0,0,0,0,0,
+0,0,0,0,62,0,0,0,65,234,235,236,237,0,0,0,0,0,0,158,0,0,
+0,0,0,0,88,0,0,0,90,0,0,0,0,0,0,0,0,0,0,182,37,0,
+0,0,0,0,0,0,0,185,185,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,185,185,0,0,0,0,0,0,0,0,185,185,0,0,0,
+0,0,0,0,0,0,0,209,209,0,0,0,0,0,0,0,0,185,185,0,0,0,
+0,0,0,0,0,0,0,233,233,0,0,0,0,0,0,0,0,209,209,37,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,233,233,0,0,0,
+0,0,0,37,0,185,185,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,209,209,0,0,0,0,0,0,0,185,185,0,0,0,0,0,0,
+0,0,0,0,0,233,233,0,0,0,0,0,37,0,209,209,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,233,233,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="5" name="objects">
+  <object id="2" name="collision" x="21" y="28.5" width="5" height="66.5"/>
+  <object id="3" name="collision" x="21" y="127" width="5.5" height="64.5"/>
+  <object id="4" name="collision" x="21" y="197.5" width="324.5" height="10.5"/>
+  <object id="6" name="collision" x="341" y="128.5" width="6" height="63"/>
+  <object id="7" name="collision" x="341.5" y="29.5" width="5" height="65.5"/>
+  <object id="9" name="spawn_player" x="44.5" y="110">
+   <point/>
+  </object>
+  <object id="10" name="door_north" type="direction" x="159.5" y="2" width="32.5" height="26.5"/>
+  <object id="11" name="spawn_enemy" x="236" y="61">
+   <point/>
+  </object>
+  <object id="12" name="spawn_enemy" x="155" y="142.5">
+   <point/>
+  </object>
+  <object id="15" name="spawn_enemy" x="294.5" y="144.5">
+   <point/>
+  </object>
+  <object id="16" name="spawn_enemy" x="83.5" y="64">
+   <point/>
+  </object>
+  <object id="17" name="spawn_enemy" x="189" y="97.5">
+   <point/>
+  </object>
+  <object id="18" name="collision" x="21.5" y="12" width="136.5" height="18.5"/>
+  <object id="19" name="collision" x="193" y="12.5" width="153" height="17.5"/>
+  <object id="21" name="collision" x="112.5" y="80.5" width="31" height="20"/>
+  <object id="22" name="collision" x="273" y="96.5" width="29.5" height="21"/>
+  <object id="23" name="collision" x="80.5" y="151.5" width="30" height="12"/>
+  <object id="24" name="collision" x="225.5" y="167.5" width="30.5" height="13"/>
+  <object id="25" name="door_west" type="direction" x="18.5" y="96.5" width="8" height="29"/>
+  <object id="26" name="door_east" type="direction" x="339.5" y="96.5" width="10.5" height="30.5"/>
+  <object id="27" name="collision" x="304" y="30.5" width="15.5" height="13"/>
+  <object id="28" name="collision" x="63.5" y="30.5" width="17.5" height="14"/>
+  <object id="29" name="collision" x="128" y="31.5" width="16" height="10"/>
+ </objectgroup>
+</map>

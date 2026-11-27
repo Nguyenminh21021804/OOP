@@ -1,14 +1,16 @@
-package entities;
+package entities.melee;
 
 import de.gurkenlabs.litiengine.Game;
 import de.gurkenlabs.litiengine.entities.CollisionInfo;
 import de.gurkenlabs.litiengine.entities.EntityInfo;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import de.gurkenlabs.litiengine.util.geom.GeometricUtilities;
+import entities.Enemy;
+import entities.MonsterType;
+import entities.SpriteFlashVfx;
 import level.RoomData;
 
 import java.awt.geom.Point2D;
-import java.util.concurrent.ThreadLocalRandom;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -104,14 +106,6 @@ public class MeleeEnemy extends Enemy {
     private long currentWindupMs = 400;        // thời gian lấy đà của nhát hiện tại (nhát nối ngắn hơn)
     private long currentRecoverMs = 300;       // thời gian hồi sau lượt đánh này
 
-    // [GĐ10] Hành vi lúc chờ
-    private Point2D idleSpot;                  // điểm đang đi tới (tâm chân), null nếu đang đứng
-    private long idleNextActionAt = 0;         // lúc được làm hành động tiếp theo
-    private long idleSpotDeadline = 0;         // quá hạn này mà chưa tới thì bỏ (phòng kẹt vật cản)
-    private double patrolRadius = 56;                    // "lãnh thổ": bán kính quanh nhà mà quái đi tuần (pixel)
-    private static final double PATROL_MIN_STEP = 18;    // mỗi chặng tuần tra cách nhà tối thiểu bấy nhiêu pixel
-    private static final double PATROL_SPEED_SCALE = 0.5;
-
     private static final double ALLY_ALERT_RADIUS = 80;   // [GĐ10]
 
     /** Dùng giá trị mặc định cho tầm đánh, tầm phát hiện, hồi chiêu. */
@@ -174,56 +168,7 @@ public class MeleeEnemy extends Enemy {
     }
 
     /** Đứng canh quanh nhà: thỉnh thoảng đổi hướng nhìn hoặc đi vài bước tới một điểm gần đó. */
-    /** Tuần tra lãnh thổ quanh nhà: đi tới một điểm trong bán kính, đứng nghỉ, rồi chọn điểm khác. */
-    private void idleBehavior(long now) {
-        RoomData room = RoomData.current();
-        if (home == null || room == null || patrolRadius <= 0) {
-            return;
-        }
-        ThreadLocalRandom r = ThreadLocalRandom.current();
-        if (idleNextActionAt == 0) {
-            idleNextActionAt = now + 500 + r.nextInt(1500);   // chặng đầu tiên bắt đầu sớm
-        }
 
-        double speed = moveSpeed * PATROL_SPEED_SCALE;
-        if (idleSpot != null) {
-            boolean arrived = moveToPoint(idleSpot, speed, 2, true);
-            if (arrived || now > idleSpotDeadline) {
-                idleSpot = null;
-                idleNextActionAt = now + 1500 + r.nextInt(2500);   // nghỉ rồi đi tiếp
-                if (arrived) {
-                    faceHorizontal(r.nextBoolean());               // tới nơi thì nhìn quanh một chút
-                }
-            }
-            return;
-        }
-        if (now < idleNextActionAt) {
-            return;
-        }
-
-        if (r.nextInt(100) < 20) {   // thỉnh thoảng chỉ đứng nhìn hướng khác
-            faceHorizontal(r.nextBoolean());
-            idleNextActionAt = now + 1500 + r.nextInt(2500);
-            return;
-        }
-
-        // Chọn điểm tự do trong lãnh thổ mà đi thẳng từ chỗ đang đứng tới được
-        Point2D me = getFeetCenter();
-        for (int attempt = 0; attempt < 8; attempt++) {
-            double angle = r.nextDouble(0, Math.PI * 2);
-            double dist = PATROL_MIN_STEP + r.nextDouble() * (patrolRadius - PATROL_MIN_STEP);
-            Point2D p = new Point2D.Double(home.getX() + Math.cos(angle) * dist, home.getY() + Math.sin(angle) * dist);
-            boolean free = !room.blocks(new Rectangle2D.Double(
-                    p.getX() - getFootWidth() / 2, p.getY() - getFootHeight() / 2, getFootWidth(), getFootHeight()));
-            if (free && room.isPathClear(me.getX(), me.getY(), p.getX(), p.getY(), getFootWidth(), getFootHeight())) {
-                idleSpot = p;
-                double travelMs = me.distance(p) / Math.max(1, speed) * 1000;
-                idleSpotDeadline = now + (long) (travelMs * 1.5) + 1000;   // quá hạn thì bỏ, phòng kẹt vật cản
-                return;
-            }
-        }
-        idleNextActionAt = now + 1500;   // không chọn được điểm nào: thử lại sau
-    }
 
     private void updateChase(long now) {
         if (!hasValidTarget()) {
@@ -599,7 +544,7 @@ public class MeleeEnemy extends Enemy {
     }
 
     private void beginAlert(long now, boolean propagate) {
-        idleSpot = null;   // [GĐ10] ngừng đi dạo
+        stopPatrol();
         lastSeenTime = now;
         lastSeenFeet = targetFeet();
         faceTarget();
@@ -608,6 +553,11 @@ public class MeleeEnemy extends Enemy {
         if (propagate) {
             wakeAllies(now);
         }
+    }
+
+    @Override
+    protected boolean usesBaseIdlePatrol() {
+        return false;
     }
 
     /** [GĐ10] Đánh thức đồng bọn gần đó (đang chờ hoặc đang về nhà): chúng nhận ra cùng mục tiêu. */
@@ -676,9 +626,9 @@ public class MeleeEnemy extends Enemy {
 
     /** [GĐ6] Vừa nhận ra mục tiêu: dấu "!" trên đầu quái. Có thể thêm âm thanh. */
     protected void onAlert() {
+        playAction("alert", 240, 3);   // giật mình: bật lên rồi hạ xuống
         MeleeAttackVfx.alert(this);
     }
-
     /** Mục tiêu có nằm trong vùng đòn đã khóa lúc báo hiệu không (đúng hình dạng vùng cảnh báo)? */
     private boolean isInStrikeZone(ICombatEntity t) {
         Point2D me = getCenter();
@@ -755,9 +705,8 @@ public class MeleeEnemy extends Enemy {
     }
 
     @Override
-    protected void onDeath() {
+    protected void onDeathStart() {
         state = State.IDLE;
-        super.onDeath();
     }
 
     @Override
@@ -837,6 +786,4 @@ public class MeleeEnemy extends Enemy {
         knockbackDistance = 14 * p.knockbackScale;
     }
 
-    /** Bán kính lãnh thổ; đặt 0 để quái đứng yên canh gác không đi tuần. */
-    public void setPatrolRadius(double patrolRadius) { this.patrolRadius = patrolRadius; }
 }

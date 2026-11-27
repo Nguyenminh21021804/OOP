@@ -107,7 +107,7 @@ public final class EnemyFx {
         try {
             g2.setColor(SHADOW);
             for (ICombatEntity e : Game.world().environment().getCombatEntities()) {
-                if (!(e instanceof Enemy) || e.isDead()) {
+                if (!(e instanceof Enemy)) {
                     continue;
                 }
                 Enemy enemy = (Enemy) e;

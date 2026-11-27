@@ -97,6 +97,10 @@ public abstract class Enemy extends Creature implements IUpdateable {
     private static final double PATROL_MIN_STEP = 18;    // mỗi chặng tuần tra cách nhà tối thiểu bấy nhiêu pixel
     private static final double PATROL_SPEED_SCALE = 0.5;
 
+    private static final int DEATH_ANIM_MS = 420;       // tổng thời gian animation đổ gục (3 frame)
+    private static final int DEATH_BURST_AT_MS = 330;   // tan thành pixel ở lúc này
+
+
     // =====================================================================
     //  Tìm mục tiêu
     // =====================================================================
@@ -157,7 +161,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
         }
     }
 
-    protected void faceHorizontal(boolean left) {
+    public void faceHorizontal(boolean left) {
         facingLeft = left;
         setFacingDirection(left ? Direction.LEFT : Direction.RIGHT);   // thêm dòng này
         Point2D me = getCenter();
@@ -558,7 +562,16 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
     private void handleDeath() {
         target = null;
-        onDeath();   // hook chạy khi quái còn trong màn chơi, để hiệu ứng chụp được hình ảnh cuối
+        onDeathStart();
+        if (playAction("death", DEATH_ANIM_MS, 3)) {
+            Game.loop().perform(DEATH_BURST_AT_MS, this::finishDeath);   // đợi quái đổ gục rồi mới tan
+        } else {
+            finishDeath();   // không có sheet "death": tan ngay như trước
+        }
+    }
+
+    private void finishDeath() {
+        onDeath();
         Game.loop().detach(this);
         if (Game.world().environment() != null) {
             Game.world().environment().remove(this);
@@ -574,23 +587,26 @@ public abstract class Enemy extends Creature implements IUpdateable {
      * @param totalMs tổng thời gian của animation
      * @param frames  số frame trong sheet
      */
-    protected void playAction(String action, int totalMs, int frames) {
-        String sheet = spriteName + "-" + action + "-" + (facingLeft ? "left" : "right") + ".png";
+    public boolean playAction(String action, int totalMs, int frames) {
+        String sheet = spriteName + "-" + action + "-"
+                + (facingLeft ? "left" : "right") + ".png";
+
         Animation anim = actionAnimations.get(sheet);
+
         if (anim == null) {
             if (Resources.spritesheets().get(sheet) == null) {
-                System.out.println("[Anim] thieu sheet " + sheet);   // TẠM: xóa khi đã kiểm chứng
-                return;
+                return false;
             }
+
             int[] durations = new int[frames];
             Arrays.fill(durations, 100);
+
             anim = new Animation(sheet, false, false, durations);
             animations().add(anim);
             actionAnimations.put(sheet, anim);
         }
-        anim.setDurationForAllKeyFrames(Math.max(30, totalMs / frames));
-        anim.restart();
-        animations().play(anim.getName());
+
+        return true;
     }
 
     /**
@@ -843,6 +859,9 @@ public abstract class Enemy extends Creature implements IUpdateable {
         if (type != null) {   // [GĐ5]
             SpriteFlashVfx.burst(this, type.getSpritePrefix(), type.getFaction().getEffectColor());
         }
+    }
+
+    protected void onDeathStart() {
     }
 
     /** Vừa mất máu. Mặc định: nháy trắng và đẩy lùi. Lớp con ghi đè nếu cần thêm (vd choáng, ngắt đòn). */
