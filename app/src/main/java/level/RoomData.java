@@ -60,6 +60,7 @@ public final class RoomData {
     private final List<Spawn> enemySpawns = new ArrayList<>();
     private final Map<String, Rectangle2D> doors = new LinkedHashMap<>();
     private Point2D playerSpawn;
+    private Point2D bossSpawn;
 
     /** Đọc map từ classpath, ví dụ load("/maps/Map_01.tmx"). */
     public static RoomData load(String resourcePath) {
@@ -98,6 +99,8 @@ public final class RoomData {
                 enemySpawns.add(new Spawn(x, y, props.get("monster"), props.get("variant")));
             } else if (name.equals("spawn_player")) {
                 playerSpawn = new Point2D.Double(x, y);
+            } else if (name.equals("spawn_boss")) {
+                bossSpawn = new Point2D.Double(x, y);
             } else if (name.startsWith("door")) {
                 doors.put(name, new Rectangle2D.Double(x, y, w, h));
             }
@@ -159,6 +162,7 @@ public final class RoomData {
     public List<Rectangle2D> getCollisions() { return Collections.unmodifiableList(collisions); }
     public List<Spawn> getEnemySpawns() { return Collections.unmodifiableList(enemySpawns); }
     public Point2D getPlayerSpawn() { return playerSpawn; }
+    public Point2D getBossSpawn() { return bossSpawn; }
     public Rectangle2D getDoor(String name) { return doors.get(name); }
     public Map<String, Rectangle2D> getDoors() { return Collections.unmodifiableMap(doors); }
 }

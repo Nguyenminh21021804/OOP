@@ -11,6 +11,7 @@ import de.gurkenlabs.litiengine.environment.tilemap.IMapObjectLayer;
 import de.gurkenlabs.litiengine.gui.screens.GameScreen;
 import de.gurkenlabs.litiengine.input.Input;
 import de.gurkenlabs.litiengine.resources.Resources;
+import entities.DemonBossEnemy;
 import entities.Enemy;
 import entities.EnemyFactory;
 import entities.MonsterType;
@@ -80,6 +81,7 @@ public class PlayScreen extends GameScreen {
 
     private List<String> mapFiles;
     private Player player;
+    private DemonBossEnemy activeBoss;
     private int currentMapIndex = 0;
     private double mapWidth = 352.0;
     private double mapHeight = 208.0;
@@ -284,6 +286,7 @@ public class PlayScreen extends GameScreen {
     }
 
     private void unloadActiveEnvironment() {
+        activeBoss = null;
         Environment activeEnv = Game.world().environment();
         if (activeEnv != null) {
             for (IEntity entity : new ArrayList<>(activeEnv.getEntities())) {
@@ -394,12 +397,30 @@ public class PlayScreen extends GameScreen {
 
     private int spawnMapEnemies(String mapPath, Environment env) {
         try {
+            RoomData room = RoomData.load("/" + mapPath);
+            RoomData.setCurrent(room);
+
+            boolean isMap01 = "maps/Map_01.tmx".equalsIgnoreCase(mapPath);
+            boolean isMap05Boss = "maps/Map_05_boss.tmx".equalsIgnoreCase(mapPath);
+            if (!isMap01 && !isMap05Boss) {
+                return 0;
+            }
+
             GamePlayScreen.loadAllMonsterSprites();
             RangedEnemy.DISTANCE_SCALE = 0.35;
             RangedEnemy.SPEED_SCALE = 0.5;
 
-            RoomData room = RoomData.load("/" + mapPath);
-            RoomData.setCurrent(room);
+            if (isMap05Boss) {
+                DemonBossEnemy boss = new DemonBossEnemy();
+                boss.configureForMapArena();
+                Point2D bs = room.getBossSpawn();
+                double bx = (bs != null) ? bs.getX() : 216.333;
+                double by = (bs != null) ? bs.getY() : 105.0;
+                boss.placeFeetAt(bx, by);
+                env.add(boss);
+                activeBoss = boss;
+                return 1;
+            }
 
             int spawned = 0;
             int unnamedIdx = 0;
@@ -616,6 +637,10 @@ public class PlayScreen extends GameScreen {
         if (!notice.isEmpty()) {
             g.setColor(new Color(255, 225, 120));
             g.drawString(notice, padX, padY + boxH + (int) Math.round(18 * k));
+        }
+
+        if (activeBoss != null && !activeBoss.isDead()) {
+            activeBoss.renderHealthBar(g, (int) Math.round(v.w), bottomY + (int) Math.round(10 * k));
         }
     }
 

@@ -64,6 +64,20 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
     private BossActionState bossState = BossActionState.CHASE;
     private int currentPhase = 1;
     private final Random random = new Random();
+    private boolean mapScaleMode = false;
+
+    private double mapMoveSpeedP1 = 70.0;
+    private double mapMoveSpeedP2 = 100.0;
+    private double aiBiteRadius = 105.0;
+    private int aiBiteDamage = 45;
+    private double aiFireSpeed = 160.0;
+    private int aiFireDamage = 15;
+    private double aiChargeSpeedP1 = 460.0;
+    private double aiChargeSpeedP2 = 560.0;
+    private double aiChargeDist = 160.0;
+    private double aiChargeRectWidth = 64.0;
+    private double aiChargeHitRadius = 48.0;
+    private int aiChargeDamage = 35;
 
     // === Player Control Mode ===
     private boolean playerControlled = false;
@@ -148,8 +162,33 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
         this.setTeam(2);    // Team 2 (phe quái)
         this.setName("");   // Ẩn tên khỏi màn hình debug
         this.setSize(32, 36);
+        this.setFootprint(22, 12);
         this.setScaling(false);
         initAnimations();
+    }
+
+    /** Điều chỉnh tầm chiêu, tốc độ và sát thương Boss cho vừa với phòng 352x208 và Player 6 HP. */
+    public void configureForMapArena() {
+        this.mapScaleMode = true;
+        this.playerControlled = false;
+        this.setTeam(TEAM_ENEMY);
+        this.scaleForMap(120, 2);
+        this.mapMoveSpeedP1 = 42.0;
+        this.mapMoveSpeedP2 = 58.0;
+        this.moveSpeed = (float) mapMoveSpeedP1;
+        this.setVelocity(this.moveSpeed);
+        this.detectionRange = 360.0;
+        this.attackRange = 220.0;
+        this.aiBiteRadius = 46.0;
+        this.aiBiteDamage = 2;
+        this.aiFireSpeed = 95.0;
+        this.aiFireDamage = 1;
+        this.aiChargeSpeedP1 = 230.0;
+        this.aiChargeSpeedP2 = 285.0;
+        this.aiChargeDist = 110.0;
+        this.aiChargeRectWidth = 32.0;
+        this.aiChargeHitRadius = 24.0;
+        this.aiChargeDamage = 2;
     }
 
     private boolean overlayRegistered = false;
@@ -296,7 +335,7 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
         }
 
         // 1. Kiểm tra chuyển pha (Phase Transition) khi máu tụt xuống <= 50%
-        double hpRatio = (double) getHitPoints().getValue() / getHitPoints().getMax();
+        double hpRatio = (double) getCurrentHealth() / getMaxHealth();
         if (currentPhase == 1 && hpRatio <= 0.50 && !isDead()) {
             triggerPhase2(now);
             return;
@@ -362,22 +401,24 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
                 return;
             }
 
-            // Chiêu 2: Cắn xé tàn bạo (Bite / Chomp) khi áp sát (cự ly <= 95px)
-            if (dist <= 95 && now - lastSwipeTime >= 1500) {
+            // Chiêu 2: Cắn xé tàn bạo (Bite / Chomp) khi áp sát
+            double biteTriggerDist = mapScaleMode ? 52.0 : 95.0;
+            if (dist <= biteTriggerDist && now - lastSwipeTime >= 1500) {
                 startTelegraph(BossActionState.BITE, 1000); // Vẽ tam giác lấy đà 1.0s trước khi cắn
                 return;
             }
 
-            // Chiêu 3: Phun lửa chùm (Fire Spit) ở cự ly trung bình (cự ly <= 380px)
-            if (dist <= 380 && now - lastSpitTime >= 2400) {
+            // Chiêu 3: Phun lửa chùm (Fire Spit) ở cự ly trung bình
+            double spitTriggerDist = mapScaleMode ? 240.0 : 380.0;
+            if (dist <= spitTriggerDist && now - lastSpitTime >= 2400) {
                 startTelegraph(BossActionState.FIRE_SPIT, 400); // Lấy đà tụ lửa 400ms
                 return;
             }
         }
 
-        // Di chuyển tiếp cận mục tiêu: Chỉ tiến tới khi chưa áp sát (> 55px)
-        // Khi đã áp sát cự ly cận chiến (<= 55px): Đứng yên tại chỗ và quay mặt về mục tiêu
-        if (dist > 55) {
+        // Di chuyển tiếp cận mục tiêu: Chỉ tiến tới khi chưa áp sát
+        double stopDist = mapScaleMode ? 34.0 : 55.0;
+        if (dist > stopDist) {
             Point2D targetPos = target.getCenter();
             double dx = targetPos.getX() - getCenter().getX();
             faceMovement(dx);
@@ -394,20 +435,33 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
         this.currentPhase = 2;
         this.bossState = BossActionState.PHASE_TRANSITION;
         this.phaseTransitionEndTime = now + 1500; // Khựng 1.5s
-        this.moveSpeed = 100f; // Tăng tốc 45% (từ 70 lên 100 px/s)
+        this.moveSpeed = (float) mapMoveSpeedP2;
 
         // Triệu hồi 2 đệ tử quỷ nhỏ Imp ở 2 cánh
         if (Game.world().environment() != null) {
-            ImpEnemy imp1 = new ImpEnemy();
-            imp1.setLocation(getX() - 48, getY());
-            imp1.setTeam(2);
-            Game.world().environment().add(imp1);
-
-            ImpEnemy imp2 = new ImpEnemy();
-            imp2.setLocation(getX() + 64, getY());
-            imp2.setTeam(2);
-            Game.world().environment().add(imp2);
+            spawnPhase2Imp(-36);
+            spawnPhase2Imp(36);
         }
+    }
+
+    private void spawnPhase2Imp(double offsetX) {
+        ImpEnemy imp = new ImpEnemy();
+        if (mapScaleMode) {
+            imp.scaleForMap(16, 1);
+        }
+        double sx = getCenter().getX() + offsetX;
+        double sy = getFeetCenter().getY();
+        imp.placeFeetAt(sx, sy);
+        if (level.RoomData.current() != null) {
+            Rectangle2D r = new Rectangle2D.Double(
+                    sx - imp.getFootWidth() / 2.0, sy - imp.getFootHeight() / 2.0,
+                    imp.getFootWidth(), imp.getFootHeight());
+            if (level.RoomData.current().blocks(r)) {
+                imp.placeFeetAt(getFeetCenter().getX(), sy);
+            }
+        }
+        imp.setTeam(TEAM_ENEMY);
+        Game.world().environment().add(imp);
     }
 
     /**
@@ -453,11 +507,11 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
             if (this.animations() != null && this.animations().hasAnimation(animName)) {
                 this.animations().play(animName);
             }
-            // Vùng tam giác cung tròn Hitbox hình quạt 80 độ, bán kính 105px vươn ra phía trước mặt
+            // Vùng tam giác cung tròn Hitbox hình quạt 80 độ
             double rad = Math.toRadians(swipeAngleDeg);
             double originX = getCenter().getX() + Math.cos(rad) * 16.0;
             double originY = getCenter().getY() + Math.sin(rad) * 16.0;
-            double biteRadius = 105.0;
+            double biteRadius = aiBiteRadius;
             double biteArcAngle = 80.0;
             double startAngle = -swipeAngleDeg - biteArcAngle / 2.0;
             Arc2D.Double biteSector = new Arc2D.Double(
@@ -467,7 +521,7 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
             );
             if (target != null && !target.isDead()) {
                 if (biteSector.intersects(target.getBoundingBox()) || biteSector.contains(target.getCenter())) {
-                    target.hit(45);
+                    target.hit(aiBiteDamage);
                 }
             }
         } else if (attack == BossActionState.FIRE_SPIT) {
@@ -516,8 +570,8 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
                 "fire-bullet",
                 start,
                 spreadTarget,
-                160.0, // Tốc độ đạn lửa
-                15,    // Sát thương 15
+                aiFireSpeed,
+                aiFireDamage,
                 1,     // Mục tiêu: Team 1 (Player)
                 null
             );
@@ -538,11 +592,11 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
      */
     private void updateCharge(long now) {
         double dt = Game.loop().getDeltaTime() / 1000.0;
-        double speed = (currentPhase == 1) ? 460.0 : 560.0; // Tốc độ lao nhanh và dứt khoát
+        double speed = (currentPhase == 1) ? aiChargeSpeedP1 : aiChargeSpeedP2;
         double step = speed * dt;
 
         double currentDist = Math.hypot(getX() - chargeStartX, getY() - chargeStartY);
-        double remainingDist = chargeMaxDistance - currentDist;
+        double remainingDist = aiChargeDist - currentDist;
         if (remainingDist <= 0) {
             this.bossState = BossActionState.CHASE;
             recordAttack();
@@ -556,8 +610,9 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
         double nextY = getY() + chargeDirY * step;
 
         // KIỂM TRA ĐÂM VÀO TƯỜNG HOẶC RÌA MAP (BONK MECHANIC)
-        // Kích thước map 1024x576: giới hạn trong [32, 960] x [32, 520]
-        boolean hitWall = !canOccupy(nextX, nextY) || nextX <= 32 || nextX >= 960 || nextY <= 32 || nextY >= 520;
+        boolean hasRoom = (level.RoomData.current() != null);
+        boolean hitWall = !canOccupy(nextX, nextY)
+                || (!hasRoom && (nextX <= 32 || nextX >= 960 || nextY <= 32 || nextY >= 520));
         if (hitWall) {
             // ĐẬP ĐẦU VÀO TƯỜNG -> BỊ CHOÁNG (STUNNED) TRONG 2.5 GIÂY!
             this.bossState = BossActionState.BONK_STUNNED;
@@ -569,7 +624,7 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
 
         setLocation(nextX, nextY);
 
-        // Kiểm tra húc trúng mục tiêu trong hành lang rộng 2 ô (64px = 2 * 32px)
+        // Kiểm tra húc trúng mục tiêu
         if (Game.world().environment() != null) {
             int enemyTeam = (getTeam() == 1) ? 2 : 1;
             for (ICombatEntity e : Game.world().environment().getCombatEntities()) {
@@ -577,8 +632,8 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
                     if (!alreadyHitInCharge.contains(e)) {
                         double dx = e.getCenter().getX() - getCenter().getX();
                         double dy = e.getCenter().getY() - getCenter().getY();
-                        if (Math.hypot(dx, dy) <= 48.0 || getBoundingBox().intersects(e.getBoundingBox())) {
-                            e.hit(playerControlled ? 55 : 35); // Đòn húc cực mạnh 55 DMG
+                        if (Math.hypot(dx, dy) <= aiChargeHitRadius || getBoundingBox().intersects(e.getBoundingBox())) {
+                            e.hit(playerControlled ? 55 : aiChargeDamage);
                             alreadyHitInCharge.add(e);
                         }
                     }
@@ -586,8 +641,8 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
             }
         }
 
-        // Hết quãng đường húc 5 ô (160px) mà không va tường
-        if (Math.hypot(getX() - chargeStartX, getY() - chargeStartY) >= chargeMaxDistance) {
+        // Hết quãng đường húc mà không va tường
+        if (Math.hypot(getX() - chargeStartX, getY() - chargeStartY) >= aiChargeDist) {
             this.bossState = BossActionState.CHASE;
             recordAttack();
         }
@@ -893,10 +948,16 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
     }
 
     @Override
-    protected void onDamaged(int amount, long now) {
-        // Trong lúc chuyển pha, Boss bất tử
+    public void hit(int damage) {
         if (bossState == BossActionState.PHASE_TRANSITION) {
-            getHitPoints().setValue(getHitPoints().getValue() + amount); // hoàn lại máu
+            return;
+        }
+        super.hit(damage);
+    }
+
+    @Override
+    protected void onDamaged(int amount, long now) {
+        if (bossState == BossActionState.PHASE_TRANSITION) {
             return;
         }
         super.onDamaged(amount, now);
@@ -947,8 +1008,8 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
                 double startDist = 16.0; // Bắt đầu từ mép trước của Boss
                 double originX = cx + chargeDirX * startDist;
                 double originY = cy + chargeDirY * startDist;
-                double rectLength = 160.0; // Dài 5 ô (5 * 32px)
-                double rectWidth = 64.0;   // Rộng 2 ô (2 * 32px)
+                double rectLength = aiChargeDist;
+                double rectWidth = aiChargeRectWidth;
 
                 g2.translate(originX, originY);
                 g2.rotate(angleRad);
@@ -1003,7 +1064,7 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
                 double rad = Math.toRadians(swipeAngleDeg);
                 double originX = cx + Math.cos(rad) * 16.0;
                 double originY = cy + Math.sin(rad) * 16.0;
-                double biteRadius = 105.0;
+                double biteRadius = aiBiteRadius;
                 double biteArcAngle = 80.0;
                 double startAngle = -swipeAngleDeg - biteArcAngle / 2.0;
                 Arc2D.Double biteSector = new Arc2D.Double(
@@ -1059,7 +1120,7 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
         g.drawRect(barX, barY, barW, barH);
 
         // Máu hiện tại
-        double hpRatio = Math.max(0, (double) getHitPoints().getValue() / getHitPoints().getMax());
+        double hpRatio = Math.max(0, (double) getCurrentHealth() / getMaxHealth());
         int fillW = (int) (barW * hpRatio);
 
         // Màu thanh máu: Pha 1 màu tím sẫm -> Pha 2 màu đỏ rực
@@ -1077,7 +1138,7 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
         String title = (playerControlled ? "👑 BẠN: " : "") + "DEMON LORD GERALD " + (currentPhase == 1 ? "[PHASE 1]" : "[ENRAGED PHASE 2]");
         g.drawString(title, barX + 5, barY - 6);
 
-        String hpText = getHitPoints().getValue() + " / " + getHitPoints().getMax() + " HP";
+        String hpText = getCurrentHealth() + " / " + getMaxHealth() + " HP";
         g.setFont(new Font("Monospaced", Font.BOLD, 11));
         g.drawString(hpText, barX + barW - 105, barY - 6);
     }
