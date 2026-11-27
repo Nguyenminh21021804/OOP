@@ -161,6 +161,10 @@ public class ShamanEnemy extends RangedEnemy implements IRenderable {
             Point2D spawnLoc = (targetSpawnPos != null) ? targetSpawnPos : new Point2D.Double(getX() + 35, getY() + 10);
             minion.setLocation(spawnLoc);
             minion.setTeam(TEAM_ENEMY); // Cùng phe Enemy
+            minion.scaleForMap(
+                    Math.min(minion.getMaxHealth(), this.getMaxHealth()),
+                    Math.min(minion.getDamage(), this.getDamage())
+            );
 
             summonedMinions.add(minion);
             Game.world().environment().add(minion);

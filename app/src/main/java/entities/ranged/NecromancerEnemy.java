@@ -78,6 +78,7 @@ public class NecromancerEnemy extends RangedEnemy {
         final boolean[] active = {true};
 
         int sát_thương = getDamage();
+        final var spawnEnv = Game.world().environment();
 
         // Đăng ký cập nhật mỗi frame cho đạn homing
         Game.loop().attach(() -> {
@@ -86,8 +87,8 @@ public class NecromancerEnemy extends RangedEnemy {
                 return;
             }
 
-            // Mục tiêu đã chết — hủy đạn
-            if (target.isDead()) {
+            // Mục tiêu đã chết, chủ thể đã chết hoặc đã chuyển map — hủy đạn
+            if (target.isDead() || this.isDead() || Game.world().environment() != spawnEnv) {
                 active[0] = false;
                 return;
             }
@@ -171,6 +172,10 @@ public class NecromancerEnemy extends RangedEnemy {
         skeleton.setLocation(
                 this.getX() + offsetX,
                 this.getY() + offsetY
+        );
+        skeleton.scaleForMap(
+                Math.min(skeleton.getMaxHealth(), this.getMaxHealth()),
+                Math.min(skeleton.getDamage(), this.getDamage())
         );
 
         // Thêm vào danh sách quản lý

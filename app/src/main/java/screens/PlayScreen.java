@@ -1,7 +1,9 @@
 package screens;
 
 import de.gurkenlabs.litiengine.Game;
+import de.gurkenlabs.litiengine.IUpdateable;
 import de.gurkenlabs.litiengine.entities.CollisionBox;
+import de.gurkenlabs.litiengine.entities.IEntity;
 import de.gurkenlabs.litiengine.environment.Environment;
 import de.gurkenlabs.litiengine.environment.tilemap.IMap;
 import de.gurkenlabs.litiengine.environment.tilemap.IMapObject;
@@ -9,6 +11,12 @@ import de.gurkenlabs.litiengine.environment.tilemap.IMapObjectLayer;
 import de.gurkenlabs.litiengine.gui.screens.GameScreen;
 import de.gurkenlabs.litiengine.input.Input;
 import de.gurkenlabs.litiengine.resources.Resources;
+import entities.Enemy;
+import entities.EnemyFactory;
+import entities.MonsterType;
+import entities.ranged.Projectile;
+import entities.ranged.RangedEnemy;
+import level.RoomData;
 import player.Player;
 import player.PlayerSkin;
 import traps.MapHazardLoader;
@@ -54,6 +62,22 @@ public class PlayScreen extends GameScreen {
         "Stage2_Secret_B.tmx"
     };
 
+    private static final MonsterType[] DEFAULT_ENEMY_ROTATION = {
+        MonsterType.ORC_WARRIOR,
+        MonsterType.MASKED_ORC,
+        MonsterType.ZOMBIE,
+        MonsterType.TINY_ZOMBIE,
+        MonsterType.CHORT,
+        MonsterType.WOGOL,
+        MonsterType.SKELET,
+        MonsterType.DOC,
+        MonsterType.IMP,
+        MonsterType.ICE_ZOMBIE,
+        MonsterType.LIZARD,
+        MonsterType.ORC_SHAMAN,
+        MonsterType.NECROMANCER
+    };
+
     private List<String> mapFiles;
     private Player player;
     private int currentMapIndex = 0;
@@ -95,7 +119,7 @@ public class PlayScreen extends GameScreen {
 
             if (code == KeyEvent.VK_ESCAPE) {
                 if (player != null) player.clearPressedKeys();
-                Game.world().unloadEnvironment();
+                unloadActiveEnvironment();
                 Game.screens().display(MainMenuScreen.NAME);
                 return;
             }
@@ -198,9 +222,7 @@ public class PlayScreen extends GameScreen {
         if (player != null) {
             player.clearPressedKeys();
         }
-        if (Game.world().environment() != null) {
-            Game.world().unloadEnvironment();
-        }
+        unloadActiveEnvironment();
     }
 
     private static PlayerSkin resolveSkin(String heroId) {
@@ -261,8 +283,23 @@ public class PlayScreen extends GameScreen {
         loadMapByIndex(currentMapIndex);
     }
 
+    private void unloadActiveEnvironment() {
+        Environment activeEnv = Game.world().environment();
+        if (activeEnv != null) {
+            for (IEntity entity : new ArrayList<>(activeEnv.getEntities())) {
+                if ((entity instanceof Enemy || entity instanceof Projectile) && entity instanceof IUpdateable up) {
+                    Game.loop().detach(up);
+                }
+            }
+        }
+        RoomData.setCurrent(null);
+        if (activeEnv != null) {
+            Game.world().unloadEnvironment();
+        }
+    }
+
     private void loadMapByIndex(int index) {
-        Game.world().unloadEnvironment();
+        unloadActiveEnvironment();
         loadError = null;
 
         if (mapFiles == null || mapFiles.isEmpty()) {
@@ -335,6 +372,7 @@ public class PlayScreen extends GameScreen {
             }
 
             env.add(player);
+            int enemyCount = spawnMapEnemies(mapPath, env);
             Game.world().loadEnvironment(env);
 
             if (Game.world().camera() != null) {
@@ -346,10 +384,50 @@ public class PlayScreen extends GameScreen {
                     + " (" + (int) mapWidth + "x" + (int) mapHeight
                     + "), colliders=" + wallRects.size()
                     + ", traps=" + hazards.trapCount
-                    + ", pits=" + hazards.pits.size());
+                    + ", pits=" + hazards.pits.size()
+                    + ", enemies=" + enemyCount);
         } catch (Exception ex) {
             loadError = "Loi nap " + mapPath + ": " + ex.getMessage();
             ex.printStackTrace();
+        }
+    }
+
+    private int spawnMapEnemies(String mapPath, Environment env) {
+        try {
+            GamePlayScreen.loadAllMonsterSprites();
+            RangedEnemy.DISTANCE_SCALE = 0.35;
+            RangedEnemy.SPEED_SCALE = 0.5;
+
+            RoomData room = RoomData.load("/" + mapPath);
+            RoomData.setCurrent(room);
+
+            int spawned = 0;
+            int unnamedIdx = 0;
+            for (RoomData.Spawn s : room.getEnemySpawns()) {
+                boolean hasExplicit = s.monster != null && !s.monster.trim().isEmpty();
+                MonsterType type = hasExplicit
+                        ? EnemyFactory.typeOrDefault(s.monster, MonsterType.ORC_WARRIOR)
+                        : DEFAULT_ENEMY_ROTATION[unnamedIdx++ % DEFAULT_ENEMY_ROTATION.length];
+                boolean elite = "elite".equalsIgnoreCase(s.variant);
+
+                try {
+                    Enemy enemy = EnemyFactory.create(type, elite);
+                    int scaledHp = (type.getRole() == MonsterType.Role.RANGED)
+                            ? Math.max(12, (int) Math.round(enemy.getMaxHealth() * 0.28))
+                            : enemy.getMaxHealth();
+                    int scaledDmg = Math.max(1, (int) Math.round(enemy.getDamage() / 5.0));
+                    enemy.scaleForMap(scaledHp, scaledDmg);
+                    enemy.placeFeetAt(s.x, s.y);
+                    env.add(enemy);
+                    spawned++;
+                } catch (UnsupportedOperationException ex) {
+                    System.err.println("[PlayScreen] Bo qua quai " + type + ": " + ex.getMessage());
+                }
+            }
+            return spawned;
+        } catch (Exception ex) {
+            System.err.println("[PlayScreen] Loi spawn quai cho " + mapPath + ": " + ex.getMessage());
+            return 0;
         }
     }
 

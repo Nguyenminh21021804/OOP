@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<<<<<<< HEAD
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="22" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="42">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="22" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="50">
  <properties>
   <property name="Stage" type="int" value="1"/>
  </properties>
@@ -9,14 +8,6 @@
  </tileset>
  <tileset firstgid="50" name="walls_decor" tilewidth="16" tileheight="16" tilecount="192" columns="24">
   <image source="../0x72_DungeonTilesetII_v1.7/atlas_walls_high-16x32.png" width="384" height="128"/>
-=======
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="22" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="30">
- <tileset firstgid="1" name="floor_traps" tilewidth="16" tileheight="16" tilecount="49" columns="7">
-  <image source="../sprites/0x72_DungeonTilesetII_v1.7/atlas_floor-16x16.png" width="112" height="112"/>
- </tileset>
- <tileset firstgid="50" name="walls_decor" tilewidth="16" tileheight="16" tilecount="192" columns="24">
-  <image source="../sprites/0x72_DungeonTilesetII_v1.7/atlas_walls_high-16x32.png" width="384" height="128"/>
->>>>>>> origin/feat/enemy-v2
   <tile id="11">
    <animation>
     <frame tileid="15" duration="100"/>
@@ -59,14 +50,9 @@
   </tile>
  </tileset>
  <tileset firstgid="242" name="room_frame" tilewidth="16" tileheight="16" tilecount="48" columns="12">
-<<<<<<< HEAD
   <image source="../0x72_DungeonTilesetII_v1.7/atlas_walls_low-16x16.png" width="192" height="64"/>
  </tileset>
  <tileset firstgid="290" source="item.tsx"/>
-=======
-  <image source="../sprites/0x72_DungeonTilesetII_v1.7/atlas_walls_low-16x16.png" width="192" height="64"/>
- </tileset>
->>>>>>> origin/feat/enemy-v2
  <layer id="4" name="ground" width="22" height="13">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -104,7 +90,6 @@
  <layer id="2" name="decor" width="22" height="13">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,210,211,212,213,0,0,0,0,0,0,0,0,0,
-<<<<<<< HEAD
 0,0,0,0,62,0,302,0,65,234,235,236,237,0,0,326,0,0,0,158,0,0,
 0,0,0,0,88,0,0,0,90,0,0,0,0,0,0,0,0,0,0,182,37,0,
 0,0,0,0,0,0,0,185,185,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -113,16 +98,6 @@
 0,0,0,0,0,0,0,233,233,0,0,0,0,0,0,0,0,209,209,37,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,233,233,0,0,0,
 0,0,290,37,0,185,185,0,0,0,0,0,0,0,0,0,0,0,0,0,297,0,
-=======
-0,0,0,0,62,0,0,0,65,234,235,236,237,0,0,0,0,0,0,158,0,0,
-0,0,0,0,88,0,0,0,90,0,0,0,0,0,0,0,0,0,0,182,37,0,
-0,0,0,0,0,0,0,185,185,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,185,185,0,0,0,0,0,0,0,0,185,185,0,0,0,
-0,0,0,0,0,0,0,209,209,0,0,0,0,0,0,0,0,185,185,0,0,0,
-0,0,0,0,0,0,0,233,233,0,0,0,0,0,0,0,0,209,209,37,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,233,233,0,0,0,
-0,0,0,37,0,185,185,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
->>>>>>> origin/feat/enemy-v2
 0,0,0,0,0,209,209,0,0,0,0,0,0,0,185,185,0,0,0,0,0,0,
 0,0,0,0,0,233,233,0,0,0,0,0,37,0,209,209,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,233,233,0,0,0,0,0,0,
@@ -136,7 +111,6 @@
   <object id="6" name="collision" x="341" y="128.5" width="6" height="63"/>
   <object id="7" name="collision" x="341.5" y="29.5" width="5" height="65.5"/>
   <object id="9" name="spawn_player" x="44.5" y="110">
-<<<<<<< HEAD
    <properties>
     <property name="entry" value="west"/>
    </properties>
@@ -148,61 +122,86 @@
     <property name="requires_key" type="bool" value="true"/>
    </properties>
   </object>
-  <object id="11" name="spawn_enemy" x="236" y="61">
+  <object id="11" name="spawn_enemy" x="155" y="62">
    <properties>
-    <property name="delay" type="int" value="0"/>
-    <property name="enemyType" value="goblin"/>
+    <property name="monster" value="ORC_WARRIOR"/>
    </properties>
    <point/>
   </object>
-  <object id="12" name="spawn_enemy" x="155" y="142.5">
+  <object id="12" name="spawn_enemy" x="195" y="64">
    <properties>
-    <property name="delay" type="int" value="0"/>
-    <property name="enemyType" value="goblin"/>
+    <property name="monster" value="MASKED_ORC"/>
    </properties>
    <point/>
   </object>
-  <object id="15" name="spawn_enemy" x="294.5" y="144.5">
+  <object id="15" name="spawn_enemy" x="155" y="138">
    <properties>
-    <property name="delay" type="int" value="0"/>
-    <property name="enemyType" value="goblin"/>
+    <property name="monster" value="ZOMBIE"/>
    </properties>
    <point/>
   </object>
-  <object id="16" name="spawn_enemy" x="83.5" y="64">
+  <object id="16" name="spawn_enemy" x="205" y="130">
    <properties>
-    <property name="delay" type="int" value="0"/>
-    <property name="enemyType" value="goblin"/>
+    <property name="monster" value="TINY_ZOMBIE"/>
    </properties>
    <point/>
   </object>
-  <object id="17" name="spawn_enemy" x="189" y="97.5">
+  <object id="17" name="spawn_enemy" x="238" y="86">
    <properties>
-    <property name="delay" type="int" value="0"/>
+    <property name="monster" value="CHORT"/>
    </properties>
-=======
    <point/>
   </object>
-  <object id="10" name="door_north" type="direction" x="159.5" y="2" width="32.5" height="26.5"/>
-  <object id="11" name="spawn_enemy" x="236" y="61">
+  <object id="42" name="spawn_enemy" x="235" y="136">
+   <properties>
+    <property name="monster" value="WOGOL"/>
+   </properties>
    <point/>
   </object>
-  <object id="12" name="spawn_enemy" x="155" y="142.5">
+  <object id="43" name="spawn_enemy" x="265" y="58">
+   <properties>
+    <property name="monster" value="SKELET"/>
+   </properties>
    <point/>
   </object>
-  <object id="15" name="spawn_enemy" x="294.5" y="144.5">
+  <object id="44" name="spawn_enemy" x="296" y="62">
+   <properties>
+    <property name="monster" value="DOC"/>
+   </properties>
    <point/>
   </object>
-  <object id="16" name="spawn_enemy" x="83.5" y="64">
+  <object id="45" name="spawn_enemy" x="316" y="102">
+   <properties>
+    <property name="monster" value="IMP"/>
+   </properties>
    <point/>
   </object>
-  <object id="17" name="spawn_enemy" x="189" y="97.5">
->>>>>>> origin/feat/enemy-v2
+  <object id="46" name="spawn_enemy" x="278" y="136">
+   <properties>
+    <property name="monster" value="ICE_ZOMBIE"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="47" name="spawn_enemy" x="316" y="142">
+   <properties>
+    <property name="monster" value="LIZARD"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="48" name="spawn_enemy" x="320" y="178">
+   <properties>
+    <property name="monster" value="ORC_SHAMAN"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="49" name="spawn_enemy" x="278" y="180">
+   <properties>
+    <property name="monster" value="NECROMANCER"/>
+   </properties>
    <point/>
   </object>
   <object id="18" name="collision" x="21.5" y="12" width="136.5" height="18.5"/>
   <object id="19" name="collision" x="193" y="12.5" width="153" height="17.5"/>
-<<<<<<< HEAD
   <object id="21" name="collision" x="112" y="80" width="31" height="20"/>
   <object id="22" name="collision" x="272" y="96" width="29.5" height="21"/>
   <object id="23" name="collision" x="80.5" y="151.5" width="30" height="12"/>
@@ -255,16 +254,5 @@
   <object id="39" name="collision" x="34.5" y="90.25" width="9" height="7.5"/>
   <object id="40" name="collision" x="323.5" y="89.75" width="9" height="7.5"/>
   <object id="41" name="collision" x="323.5" y="136.75" width="9" height="7.5"/>
-=======
-  <object id="21" name="collision" x="112.5" y="80.5" width="31" height="20"/>
-  <object id="22" name="collision" x="273" y="96.5" width="29.5" height="21"/>
-  <object id="23" name="collision" x="80.5" y="151.5" width="30" height="12"/>
-  <object id="24" name="collision" x="225.5" y="167.5" width="30.5" height="13"/>
-  <object id="25" name="door_west" type="direction" x="18.5" y="96.5" width="8" height="29"/>
-  <object id="26" name="door_east" type="direction" x="339.5" y="96.5" width="10.5" height="30.5"/>
-  <object id="27" name="collision" x="304" y="30.5" width="15.5" height="13"/>
-  <object id="28" name="collision" x="63.5" y="30.5" width="17.5" height="14"/>
-  <object id="29" name="collision" x="128" y="31.5" width="16" height="10"/>
->>>>>>> origin/feat/enemy-v2
  </objectgroup>
 </map>

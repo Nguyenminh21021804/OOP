@@ -278,7 +278,7 @@ public class GamePlayScreen extends GameScreen {
         // 2. Quái cận chiến từ các thư mục Frame
         String[] prefixes = {"chort", "orc_warrior", "masked_orc", "tiny_zombie", "wogol", "zombie"};
         String[] frameDirs = {"ChortFrame", "OrcWarriorFrame", "MaskedOrcFrame", "TinyZombieFrame", "WogolFrame", "ZombieFrame"};
-        String[] actions = {"idle", "move", "strike", "windup", "hurt"};
+        String[] actions = {"idle", "move", "strike", "windup", "hurt", "alert", "death"};
         String[] directions = {"down", "left", "right", "up"};
 
         for (int i = 0; i < prefixes.length; i++) {

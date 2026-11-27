@@ -489,7 +489,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
     /** So máu với lần trước: giảm nghĩa là vừa bị đánh (bắt được mọi nguồn sát thương). */
     private void detectDamage(long now) {
-        int hp = getHitPoints().getValue();
+        int hp = getHitPoints().getModifiedValue();
         if (hp < lastKnownHp) {
             int lost = lastKnownHp - hp;
             lastKnownHp = hp;
@@ -770,7 +770,7 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
     // --- Các phương thức lấy thông tin (Getter & Setter) ---
     public int getCurrentHealth() {
-        return this.getHitPoints().getValue();
+        return this.getHitPoints().getModifiedValue();
     }
 
     public int getMaxHealth() {
@@ -783,6 +783,15 @@ public abstract class Enemy extends Creature implements IUpdateable {
 
     public void setDamage(int damage) {
         this.damage = damage;
+    }
+
+    /** Điều chỉnh máu tối đa và sát thương theo quy mô màn chơi mà không kích hoạt nháy thương. */
+    public void scaleForMap(int newMaxHp, int newDamage) {
+        int safeHp = Math.max(1, newMaxHp);
+        this.getHitPoints().setMax(safeHp);
+        this.getHitPoints().setValue(safeHp);
+        this.lastKnownHp = safeHp;
+        this.damage = Math.max(1, newDamage);
     }
 
     public double getAttackRange() {

@@ -10,7 +10,9 @@ import de.gurkenlabs.litiengine.entities.CollisionInfo;
 import de.gurkenlabs.litiengine.entities.CombatInfo;
 import de.gurkenlabs.litiengine.entities.Creature;
 import de.gurkenlabs.litiengine.entities.EntityInfo;
+import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import de.gurkenlabs.litiengine.entities.MovementInfo;
+import de.gurkenlabs.litiengine.environment.Environment;
 import de.gurkenlabs.litiengine.graphics.IRenderable;
 import de.gurkenlabs.litiengine.graphics.animation.Animation;
 import weapons.Bow;
@@ -18,8 +20,10 @@ import weapons.Spear;
 import weapons.Staff;
 import weapons.Sword;
 import weapons.Weapon;
+import weapons.WeaponCollision;
 
 import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -117,6 +121,9 @@ public class Player extends Creature implements IUpdateable, IRenderable {
 
     private double aimDirX = 1.0;
     private double aimDirY = 0.0;
+    private static final double AUTO_AIM_RANGE = 240.0;
+    private boolean autoAimEnabled = true;
+    private ICombatEntity autoAimTarget = null;
 
     private final Set<Integer> pressedKeys = new HashSet<>();
     private boolean dashKeyLocked = false;
@@ -358,6 +365,8 @@ public class Player extends Creature implements IUpdateable, IRenderable {
             }
         }
 
+        updateAutoAim();
+
         if (!dashing && !weaponDashing && isFootCenterInPit()) {
             startPitFall();
             return;
@@ -457,9 +466,46 @@ public class Player extends Creature implements IUpdateable, IRenderable {
             renderFallingEffect(g);
             return;
         }
-        if (currentWeapon != null && !isDead() && state != State.SPAWN) {
-            currentWeapon.renderInHand(g, this);
+        if (!isDead() && state != State.SPAWN) {
+            renderAutoAimReticle(g);
+            if (currentWeapon != null) {
+                currentWeapon.renderInHand(g, this);
+            }
         }
+    }
+
+    private void renderAutoAimReticle(Graphics2D g) {
+        if (!autoAimEnabled || autoAimTarget == null || autoAimTarget.isDead() || Game.world().camera() == null) {
+            return;
+        }
+        Rectangle2D tb = autoAimTarget.getBoundingBox();
+        if (tb == null || tb.getWidth() <= 0 || tb.getHeight() <= 0) return;
+
+        double pad = 2.0;
+        Point2D tl = Game.world().camera().getViewportLocation(new Point2D.Double(tb.getX() - pad, tb.getY() - pad));
+        double w = tb.getWidth() + pad * 2.0;
+        double h = tb.getHeight() + pad * 2.0;
+        double corner = Math.max(2.5, Math.min(4.5, Math.min(w, h) * 0.26));
+
+        int x1 = (int) Math.round(tl.getX());
+        int y1 = (int) Math.round(tl.getY());
+        int x2 = (int) Math.round(tl.getX() + w);
+        int y2 = (int) Math.round(tl.getY() + h);
+        int c = (int) Math.round(corner);
+
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setColor(new Color(255, 75, 75, 225));
+        g2.setStroke(new BasicStroke(1.2f));
+        // 4 góc khung khóa mục tiêu
+        g2.drawLine(x1, y1, x1 + c, y1);
+        g2.drawLine(x1, y1, x1, y1 + c);
+        g2.drawLine(x2, y1, x2 - c, y1);
+        g2.drawLine(x2, y1, x2, y1 + c);
+        g2.drawLine(x1, y2, x1 + c, y2);
+        g2.drawLine(x1, y2, x1, y2 - c);
+        g2.drawLine(x2, y2, x2 - c, y2);
+        g2.drawLine(x2, y2, x2, y2 - c);
+        g2.dispose();
     }
 
     private void renderFallingEffect(Graphics2D g) {
@@ -562,15 +608,74 @@ public class Player extends Creature implements IUpdateable, IRenderable {
 
     public void tryBasicAttack() {
         if (currentWeapon == null) return;
+        updateAutoAim();
         currentWeapon.attack(this);
     }
 
     public void tryWeaponSkill() {
         if (currentWeapon == null) return;
+        updateAutoAim();
         String err = currentWeapon.useSkill(this);
         if (!err.isEmpty()) {
             showNotice(err);
         }
+    }
+
+    private void updateAutoAim() {
+        if (!autoAimEnabled || isDead() || state == State.SPAWN || state == State.FALL) {
+            autoAimTarget = null;
+            return;
+        }
+        ICombatEntity best = findAutoAimTarget();
+        autoAimTarget = best;
+        if (best == null) return;
+
+        double px = getX() + getWidth() / 2.0;
+        double py = getY() + getHeight() * 0.62;
+        Point2D tc = best.getCenter();
+        double dx = tc.getX() - px;
+        double dy = tc.getY() - py;
+        double len = Math.hypot(dx, dy);
+        if (len > 1e-4) {
+            aimDirX = dx / len;
+            aimDirY = dy / len;
+            if (Math.abs(aimDirX) > 0.05) {
+                facingRight = aimDirX > 0;
+            }
+        }
+    }
+
+    private ICombatEntity findAutoAimTarget() {
+        Environment env = Game.world().environment();
+        if (env == null) return null;
+
+        double px = getX() + getWidth() / 2.0;
+        double py = getY() + getHeight() * 0.62;
+
+        ICombatEntity bestVisible = null;
+        double bestVisibleDist = AUTO_AIM_RANGE;
+        ICombatEntity bestAny = null;
+        double bestAnyDist = AUTO_AIM_RANGE;
+
+        for (ICombatEntity entity : env.getCombatEntities()) {
+            if (entity == null || entity == this || entity.isDead()) continue;
+            if (entity.getTeam() == this.getTeam()) continue;
+
+            Point2D tc = entity.getCenter();
+            double dist = Math.hypot(tc.getX() - px, tc.getY() - py);
+            if (dist > AUTO_AIM_RANGE) continue;
+
+            if (WeaponCollision.hasLineOfSight(env, px, py, tc.getX(), tc.getY(), this)) {
+                if (dist < bestVisibleDist) {
+                    bestVisibleDist = dist;
+                    bestVisible = entity;
+                }
+            } else if (dist < bestAnyDist) {
+                bestAnyDist = dist;
+                bestAny = entity;
+            }
+        }
+        return (bestVisible != null) ? bestVisible : bestAny;
     }
 
     public boolean consumeMana(int amount) {
@@ -670,6 +775,7 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         if (isDead() || dashing || weaponDashing || state == State.SPAWN || state == State.FALL || damage <= 0) return;
 
         long now = System.currentTimeMillis();
+        if (now - hurtStartTimeMs < HURT_DURATION_MS) return;
         applyDamageArmorFirst(damage, now);
 
         if (isDead()) {
@@ -803,6 +909,9 @@ public class Player extends Creature implements IUpdateable, IRenderable {
     public boolean isFacingRight() { return facingRight; }
     public double getAimDirX() { return aimDirX; }
     public double getAimDirY() { return aimDirY; }
+    public ICombatEntity getAutoAimTarget() { return autoAimTarget; }
+    public boolean isAutoAimEnabled() { return autoAimEnabled; }
+    public void setAutoAimEnabled(boolean autoAimEnabled) { this.autoAimEnabled = autoAimEnabled; }
 
     public long getDashCooldownRemainingMs() {
         return Math.max(0, dashCooldownMs - (System.currentTimeMillis() - lastDashTimeMs));
