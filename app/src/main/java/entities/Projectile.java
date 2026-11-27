@@ -6,9 +6,11 @@ import de.gurkenlabs.litiengine.entities.Creature;
 import de.gurkenlabs.litiengine.entities.ICombatEntity;
 import de.gurkenlabs.litiengine.graphics.IRenderable;
 import de.gurkenlabs.litiengine.graphics.ImageRenderer;
+import de.gurkenlabs.litiengine.graphics.RenderType;
 import de.gurkenlabs.litiengine.graphics.Spritesheet;
 import de.gurkenlabs.litiengine.resources.Resources;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
@@ -101,7 +103,7 @@ public class Projectile extends Creature implements IUpdateable, IRenderable {
         this.setScaling(false);
         this.setIndestructible(true);
         this.setCollision(false); // Không bị kẹt bởi địa hình
-        this.setTeam(2);          // Cùng team với quái để không bị xô đẩy hoặc nhắm trúng
+        this.setTeam(targetTeam == 1 ? 2 : 1); // Cùng team với người bắn để không tự trúng mình
 
         // Tắt animation mặc định không xoay của Creature để render tự vẽ xoay trong render()
         if (this.animations() != null) {
@@ -112,6 +114,7 @@ public class Projectile extends Creature implements IUpdateable, IRenderable {
         Game.loop().attach(this);
         if (Game.world().environment() != null) {
             Game.world().environment().add(this);
+            Game.world().environment().add((IRenderable) this, RenderType.OVERLAY);
         }
     }
 
@@ -135,8 +138,11 @@ public class Projectile extends Creature implements IUpdateable, IRenderable {
         this.setLocation(nextX, nextY);
         traveledDistance += step;
 
-        // Kiểm tra va chạm với các thực thể chiến đấu thuộc targetTeam
+        // Kiểm tra va chạm với các thực thể chiến đấu thuộc targetTeam (bỏ qua bản thân và đạn khác)
         for (ICombatEntity entity : Game.world().environment().getCombatEntities()) {
+            if (entity == this || entity instanceof Projectile) {
+                continue;
+            }
             if (entity.getTeam() == targetTeam && !entity.isDead()) {
                 double distance = this.getCenter().distance(entity.getCenter());
                 // Bán kính va chạm 20 pixel
@@ -173,21 +179,57 @@ public class Projectile extends Creature implements IUpdateable, IRenderable {
             if (spritesheet == null) {
                 spritesheet = Resources.spritesheets().get(spriteName + "-idle");
             }
-            if (spritesheet == null) return;
         }
 
-        int total = spritesheet.getTotalNumberOfSprites();
-        // Đạn nhiều frame (như cầu lửa, đạn băng) sẽ tự động chạy hoạt họa (90ms/frame)
-        int frame = total > 1 ? (int) ((Game.time().now() / 90) % total) : 0;
-        BufferedImage img = spritesheet.getSprite(frame);
-        if (img == null) return;
+        BufferedImage img = null;
+        if (spritesheet != null) {
+            int total = spritesheet.getTotalNumberOfSprites();
+            // Animate multi-frame projectile sprites at 90ms per frame.
+            int frame = total > 1 ? (int) ((Game.time().now() / 90) % total) : 0;
+            img = spritesheet.getSprite(frame);
+        }
 
-        // Lấy tọa độ hiển thị trên màn hình qua camera
-        Point2D viewLoc = Game.world().camera().getViewportLocation(this.getCenter());
-        double rx = viewLoc.getX() - img.getWidth() / 2.0;
-        double ry = viewLoc.getY() - img.getHeight() / 2.0;
+        // Projectile is rendered in OVERLAY, so convert its world position
+        // through the camera before drawing it in viewport coordinates.
+        Point2D worldCenter = this.getCenter();
+        Point2D center = Game.world().camera() != null
+                ? Game.world().camera().getViewportLocation(worldCenter)
+                : worldCenter;
+        double rx = center.getX() - (img != null ? img.getWidth() : 16) / 2.0;
+        double ry = center.getY() - (img != null ? img.getHeight() : 16) / 2.0;
 
-        ImageRenderer.renderRotated(g, img, rx, ry, rotationAngle);
+        // Quầng hào quang phát sáng và vệt lửa / băng rực rỡ
+        String lower = spriteName.toLowerCase();
+        if (lower.contains("fire")) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            // Lớp hào quang cam đỏ tỏa rộng
+            g2.setColor(new Color(255, 80, 20, 85));
+            g2.fillOval((int) center.getX() - 12, (int) center.getY() - 12, 24, 24);
+            // Lớp lõi lửa vàng sáng
+            g2.setColor(new Color(255, 220, 60, 130));
+            g2.fillOval((int) center.getX() - 7, (int) center.getY() - 7, 14, 14);
+            // Vệt tàn lửa phía sau
+            g2.setColor(new Color(255, 140, 30, 95));
+            g2.fillOval((int) (center.getX() - dirX * 10 - 4), (int) (center.getY() - dirY * 10 - 4), 8, 8);
+            g2.dispose();
+        } else if (lower.contains("ice")) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setColor(new Color(60, 190, 255, 90));
+            g2.fillOval((int) center.getX() - 11, (int) center.getY() - 11, 22, 22);
+            g2.setColor(new Color(220, 245, 255, 140));
+            g2.fillOval((int) center.getX() - 6, (int) center.getY() - 6, 12, 12);
+            g2.dispose();
+        }
+
+        if (img != null) {
+            ImageRenderer.renderRotated(g, img, rx, ry, rotationAngle);
+        } else {
+            // Keep projectiles visible even if the image resource failed to load.
+            g.setColor(lower.contains("ice") ? new Color(100, 220, 255) : new Color(255, 190, 40));
+            g.fillOval((int) center.getX() - 6, (int) center.getY() - 6, 12, 12);
+            g.setColor(Color.WHITE);
+            g.fillOval((int) center.getX() - 2, (int) center.getY() - 2, 4, 4);
+        }
     }
 
     /**
@@ -199,6 +241,7 @@ public class Projectile extends Creature implements IUpdateable, IRenderable {
         Game.loop().detach(this);
         if (Game.world().environment() != null) {
             Game.world().environment().remove(this);
+            Game.world().environment().removeRenderable(this);
         }
     }
 

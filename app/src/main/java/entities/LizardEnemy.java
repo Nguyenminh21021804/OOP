@@ -8,6 +8,7 @@ import de.gurkenlabs.litiengine.graphics.IRenderable;
 import de.gurkenlabs.litiengine.graphics.ImageRenderer;
 import de.gurkenlabs.litiengine.graphics.Spritesheet;
 import de.gurkenlabs.litiengine.graphics.animation.Animation;
+import de.gurkenlabs.litiengine.graphics.animation.AnimationController;
 import de.gurkenlabs.litiengine.resources.Resources;
 
 import java.awt.Graphics2D;
@@ -68,6 +69,7 @@ public class LizardEnemy extends RangedEnemy implements IRenderable {
         // Khớp thời gian khựng lại với chu trình bắn cung 310ms
         this.attackWindupMs = 0;
         this.attackPauseTotalMs = DRAW_DURATION + RECOIL_DURATION;
+        this.setName(""); // Ẩn tên quái debug
 
         // Đăng ký quy tắc hoạt họa di chuyển walk và đứng idle rõ ràng
         initAnimations();
@@ -77,31 +79,43 @@ public class LizardEnemy extends RangedEnemy implements IRenderable {
      * Khởi tạo hoạt họa chạy (walk) và đứng (idle) đảm bảo chuyển động mượt mà và xoay mặt đúng hướng (Trái / Phải).
      */
     private void initAnimations() {
-        if (this.animations() != null) {
-            registerAnimation("lizard-f-walk-left");
-            registerAnimation("lizard-f-walk-right");
-            registerAnimation("lizard-f-walk");
-            registerAnimation("lizard-f-idle-left");
-            registerAnimation("lizard-f-idle-right");
-            registerAnimation("lizard-f-idle");
+        if (this.animations() == null) return;
 
-            // Quy tắc hoạt họa động: quay mặt về đúng hướng (left/right) theo vị trí mục tiêu
-            this.animations().addRule(
-                c -> !this.isIdle() && !this.isAiming,
-                c -> "lizard-f-walk-" + (this.getFacingDirection() == Direction.LEFT ? "left" : "right")
-            );
-            this.animations().addRule(
-                c -> this.isIdle() || this.isAiming,
-                c -> "lizard-f-idle-" + (this.getFacingDirection() == Direction.LEFT ? "left" : "right")
-            );
+        Spritesheet idleSheet = Resources.spritesheets().get("lizard-f-idle");
+        Spritesheet walkSheet = Resources.spritesheets().get("lizard-f-walk");
+
+        if (idleSheet != null) {
+            Animation idleRight = new Animation("lizard-f-idle-right", idleSheet, true);
+            Animation idleLeft = AnimationController.flippedAnimation(idleRight, "lizard-f-idle-left", false);
+            this.animations().add(idleRight);
+            this.animations().add(idleLeft);
+            this.animations().add(new Animation("lizard-f-idle", idleSheet, true));
+            this.animations().setDefault(idleRight);
         }
+
+        if (walkSheet != null) {
+            Animation walkRight = new Animation("lizard-f-walk-right", walkSheet, true);
+            Animation walkLeft = AnimationController.flippedAnimation(walkRight, "lizard-f-walk-left", false);
+            this.animations().add(walkRight);
+            this.animations().add(walkLeft);
+            this.animations().add(new Animation("lizard-f-walk", walkSheet, true));
+        }
+
+        this.animations().addRule(
+            c -> isMoving(),
+            c -> (this.getFacingDirection() == Direction.LEFT) ? "lizard-f-walk-left" : "lizard-f-walk-right"
+        );
+        this.animations().addRule(
+            c -> !isMoving(),
+            c -> (this.getFacingDirection() == Direction.LEFT) ? "lizard-f-idle-left" : "lizard-f-idle-right"
+        );
     }
 
-    private void registerAnimation(String name) {
-        Spritesheet sheet = Resources.spritesheets().get(name);
-        if (sheet != null && !this.animations().hasAnimation(name)) {
-            this.animations().add(new Animation(sheet, true));
+    public boolean isMoving() {
+        if (isAiming || isAttacking || target == null || target.isDead()) {
+            return false;
         }
+        return isInDetectionRange(target);
     }
 
     /**
@@ -216,6 +230,14 @@ public class LizardEnemy extends RangedEnemy implements IRenderable {
         );
     }
 
+    @Override
+    public void loaded(de.gurkenlabs.litiengine.environment.Environment env) {
+        super.loaded(env);
+        if (env != null) {
+            env.add(this, de.gurkenlabs.litiengine.graphics.RenderType.OVERLAY);
+        }
+    }
+
     /**
      * Vẽ hiệu ứng cung và mũi tên đồng bộ hoàn toàn với logic game:
      * - 0 - 60ms: Cầm cung giương lên (Frame 0: relaxed).
@@ -244,7 +266,7 @@ public class LizardEnemy extends RangedEnemy implements IRenderable {
 
         if (bowSpritesheet == null) return;
 
-        Point2D centerLoc = Game.world().camera().getViewportLocation(this.getCenter());
+        Point2D centerLoc = this.getCenter();
         double rad = Math.toRadians(bowAngle);
         double cos = Math.cos(rad);
         double sin = Math.sin(rad);
