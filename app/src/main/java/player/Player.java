@@ -128,15 +128,24 @@ public class Player extends Creature implements IUpdateable, IRenderable {
     private long lastUpdateNano = System.nanoTime();
 
     public Player(double x, double y, PlayerSkin initialSkin) {
+        this(x, y, initialSkin, null);
+    }
+
+    public Player(double x, double y, PlayerSkin initialSkin, List<Weapon> initialWeapons) {
         super(initialSkin.getId());
         this.skin = initialSkin;
         this.hitbox = new PlayerHitbox(this);
         this.setTeam(1);
 
-        this.weaponArsenal.add(new Sword(1));
-        this.weaponArsenal.add(new Spear(1));
-        this.weaponArsenal.add(new Bow(1));
-        this.weaponArsenal.add(new Staff(1));
+        if (initialWeapons != null && !initialWeapons.isEmpty()) {
+            this.weaponArsenal.addAll(initialWeapons);
+        } else {
+            this.weaponArsenal.add(new Sword(1));
+            this.weaponArsenal.add(new Spear(1));
+            this.weaponArsenal.add(new Bow(1));
+            this.weaponArsenal.add(new Staff(1));
+        }
+        this.currentWeaponIndex = 0;
         this.currentWeapon = this.weaponArsenal.get(0);
 
         applySkinMetrics();
@@ -181,7 +190,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         return weaponDashing;
     }
 
-    /** Di chuyển nhân vật trong pha lướt của skill vũ khí qua PhysicsEngine (không xuyên tường) */
     public void moveByWeaponDash(double dx, double dy) {
         if (dx > 0.05) facingRight = true;
         else if (dx < -0.05) facingRight = false;
@@ -317,10 +325,8 @@ public class Player extends Creature implements IUpdateable, IRenderable {
             return;
         }
 
-        // 1. Tự hồi giáp theo thời gian
         updateArmorRegen(nowMs);
 
-        // 2. Đang rơi xuống hố -> chạy hết hiệu ứng rồi trừ giáp/máu & spawn lại trên bờ
         if (state == State.FALL) {
             syncAnimation(false);
             if (nowMs - fallStartTimeMs >= FALL_DURATION_MS) {
@@ -329,7 +335,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
             return;
         }
 
-        // 3. Đang chạy hiệu ứng spawn
         if (state == State.SPAWN) {
             if (nowMs - spawnStartTimeMs >= Math.max(100L, spawnDurationMs - 20L)) {
                 setState(State.IDLE);
@@ -339,12 +344,10 @@ public class Player extends Creature implements IUpdateable, IRenderable {
 
         boolean knockedBack = isKnockedBack(nowMs);
 
-        // 4. Lưu vị trí an toàn trên bờ khi đứng vững trên đất
         if (!dashing && !weaponDashing && !knockedBack && isStandingSafelyOnGround()) {
             recordSafePosition();
         }
 
-        // 5. Xử lý di chuyển: Skill Dash (do vũ khí điều khiển) > Đẩy lùi > Dash > WASD
         boolean moving = false;
         if (weaponDashing) {
             moving = true;
@@ -386,13 +389,11 @@ public class Player extends Creature implements IUpdateable, IRenderable {
             }
         }
 
-        // 6. Kiểm tra rơi xuống hố bẫy (miễn rơi khi đang Dash hoặc lướt Skill)
         if (!dashing && !weaponDashing && isFootCenterInPit()) {
             startPitFall();
             return;
         }
 
-        // 7. Cập nhật trạng thái hoạt ảnh: DASH > HURT > RUN > IDLE
         boolean hurting = (nowMs - hurtStartTimeMs) < HURT_DURATION_MS;
         if (dashing || weaponDashing) {
             setState(State.DASH);
@@ -404,7 +405,6 @@ public class Player extends Creature implements IUpdateable, IRenderable {
             setState(State.IDLE);
         }
 
-        // 8. Cập nhật hoạt ảnh & hitbox vũ khí
         if (currentWeapon != null) {
             currentWeapon.update(this);
         }
@@ -838,6 +838,8 @@ public class Player extends Creature implements IUpdateable, IRenderable {
         this.currentWeapon = weapon;
     }
 
+    public List<Weapon> getWeaponArsenal() { return Collections.unmodifiableList(weaponArsenal); }
+    public int getCurrentWeaponIndex() { return currentWeaponIndex; }
     public PlayerHitbox getHitbox() { return hitbox; }
     public PlayerSkin getSkin() { return skin; }
     public State getState() { return state; }

@@ -1,26 +1,22 @@
-Sun Nov 22 16:47:56 GMT+07:00 2026 main threw an exception:
-java.lang.NullPointerException: Cannot store to object array because "this.weaponImgs" is null
-	at screens.CharacterSelectScreen.loadSprites(CharacterSelectScreen.java:160)
-	at screens.CharacterSelectScreen.initializeComponents(CharacterSelectScreen.java:89)
-	at de.gurkenlabs.litiengine.gui.GuiComponent.<init>(GuiComponent.java:186)
-	at de.gurkenlabs.litiengine.gui.GuiComponent.<init>(GuiComponent.java:121)
-	at de.gurkenlabs.litiengine.gui.screens.Screen.<init>(Screen.java:14)
-	at de.gurkenlabs.litiengine.gui.screens.GameScreen.<init>(GameScreen.java:18)
-	at screens.CharacterSelectScreen.<init>(CharacterSelectScreen.java:84)
-	at App.main(App.java:20)
-
-====Runtime Information====
-Operating System: Windows 11
-	Architecture: amd64
-	Version: 10.0
-Memory:
-	Max heap size: 3.9 GiB
-	Current heap size: 18.0 MiB
-	Heap used: 8.6 MiB
-	Free heap: 9.4 MiB
-Java Version: Java(TM) SE Runtime Environment 27+35-2325 
-	Vendor: Oracle Corporation
-Uptime: PT0.532S
-Screens: 1
-	Screen 0: 1920x1080@165hz
-
+Fri Nov 27 17:48:13 GMT+07:00 2026 Main Update Loop threw an exception:
+java.lang.NullPointerException: Cannot invoke "de.gurkenlabs.litiengine.IGameLoop.getTicks()" because the return value of "de.gurkenlabs.litiengine.Game.loop()" is null
+	at de.gurkenlabs.litiengine.GameTime.now(GameTime.java:36)
+	at de.gurkenlabs.litiengine.GameTime.since(GameTime.java:48)
+	at de.gurkenlabs.litiengine.GameTime.sinceEnvironmentLoad(GameTime.java:81)
+	at de.gurkenlabs.litiengine.environment.tilemap.xml.TileAnimation.getCurrentFrame(TileAnimation.java:46)
+	at de.gurkenlabs.litiengine.environment.tilemap.xml.TilesetEntry.getImage(TilesetEntry.java:81)
+	at de.gurkenlabs.litiengine.environment.tilemap.xml.Tile.getImage(Tile.java:121)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.drawTile(MapRenderer.java:141)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.drawRow(MapRenderer.java:131)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.renderTileLayer(MapRenderer.java:114)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.renderLayers(MapRenderer.java:85)
+	at de.gurkenlabs.litiengine.environment.tilemap.MapRenderer.render(MapRenderer.java:71)
+	at de.gurkenlabs.litiengine.environment.Environment.render(Environment.java:2240)
+	at de.gurkenlabs.litiengine.environment.Environment.render(Environment.java:2081)
+	at de.gurkenlabs.litiengine.gui.screens.GameScreen.render(GameScreen.java:24)
+	at screens.MainMenuScreen.render(MainMenuScreen.java:91)
+	at de.gurkenlabs.litiengine.graphics.RenderComponent.renderScreen(RenderComponent.java:217)
+	at de.gurkenlabs.litiengine.graphics.RenderComponent.renderGraphics(RenderComponent.java:170)
+	at de.gurkenlabs.litiengine.graphics.RenderComponent.render(RenderComponent.java:148)
+	at de.gurkenlabs.litiengine.GameLoop.process(GameLoop.java:93)
+	at de.gurkenlabs.litiengine.UpdateLoop.run(UpdateLoop.java:57)

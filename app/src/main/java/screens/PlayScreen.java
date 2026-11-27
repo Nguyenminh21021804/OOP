@@ -12,6 +12,11 @@ import de.gurkenlabs.litiengine.resources.Resources;
 import player.Player;
 import player.PlayerSkin;
 import traps.MapHazardLoader;
+import weapons.Bow;
+import weapons.Spear;
+import weapons.Staff;
+import weapons.Sword;
+import weapons.Weapon;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -24,6 +29,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class PlayScreen extends GameScreen {
     public static final String NAME = "PLAY";
@@ -123,6 +129,8 @@ public class PlayScreen extends GameScreen {
     public void prepare() {
         super.prepare();
         currentMapIndex = 0;
+        // Tạo lại Player mới mỗi lần bấm Start để nhận đúng nhân vật & 2 vũ khí vừa chọn
+        player = null;
         if (!ensurePlayerReady()) {
             return;
         }
@@ -139,7 +147,13 @@ public class PlayScreen extends GameScreen {
         }
 
         try {
-            player = new Player(0, 0, PlayerSkin.KNIGHT_01);
+            GameSelection sel = GameSelection.get();
+            PlayerSkin chosenSkin = resolveSkin(sel.getHeroId());
+            List<Weapon> chosenWeapons = buildSelectedWeapons(
+                    sel.getPrimaryWeaponId(),
+                    sel.getSecondaryWeaponId()
+            );
+            player = new Player(0, 0, chosenSkin, chosenWeapons);
             return true;
         } catch (Throwable ex) {
             loadError = "Loi khoi tao Player: " + ex.getClass().getSimpleName() + " - " + ex.getMessage();
@@ -147,6 +161,63 @@ public class PlayScreen extends GameScreen {
             ex.printStackTrace();
             return false;
         }
+    }
+
+    @Override
+    public void suspend() {
+        super.suspend();
+        if (player != null) {
+            player.clearPressedKeys();
+        }
+        if (Game.world().environment() != null) {
+            Game.world().unloadEnvironment();
+        }
+    }
+
+    private static PlayerSkin resolveSkin(String heroId) {
+        PlayerSkin[] skins = PlayerSkin.values();
+        if (skins.length == 0) {
+            return PlayerSkin.KNIGHT_01;
+        }
+        int idx = 0;
+        if (heroId != null) {
+            switch (heroId.toLowerCase(Locale.ROOT)) {
+                case "hero1" -> idx = 0;
+                case "hero2" -> idx = 1;
+                case "hero3" -> idx = 2;
+                case "hero4" -> idx = 3;
+                default -> idx = 0;
+            }
+        }
+        return skins[Math.min(idx, skins.length - 1)];
+    }
+
+    private static List<Weapon> buildSelectedWeapons(String primaryId, String secondaryId) {
+        List<Weapon> weapons = new ArrayList<>();
+        Weapon w1 = createWeaponById(primaryId);
+        if (w1 != null) {
+            weapons.add(w1);
+        }
+        if (secondaryId != null && !secondaryId.equalsIgnoreCase(primaryId)) {
+            Weapon w2 = createWeaponById(secondaryId);
+            if (w2 != null) {
+                weapons.add(w2);
+            }
+        }
+        if (weapons.isEmpty()) {
+            weapons.add(new Sword(1));
+        }
+        return weapons;
+    }
+
+    private static Weapon createWeaponById(String weaponId) {
+        if (weaponId == null) return new Sword(1);
+        return switch (weaponId.toLowerCase(Locale.ROOT)) {
+            case "spear" -> new Spear(1);
+            case "bow" -> new Bow(1);
+            case "staff" -> new Staff(1);
+            default -> new Sword(1);
+        };
     }
 
     private void nextMap() {
@@ -207,18 +278,15 @@ public class PlayScreen extends GameScreen {
                 }
             }
 
-            // Nạp toàn bộ bẫy gai, bẫy lửa (kể cả template .tx) và vùng hố bẫy của map
             MapHazardLoader.LoadResult hazards = MapHazardLoader.loadHazards(
                     MAP_FILES[index], env, player, wallRects
             );
             player.setMapPits(hazards.pits);
 
-            // Đặt nhân vật tại điểm spawn, đẩy nhẹ nếu sát tường hoặc hố, rồi lưu vị trí an toàn
             player.setLocation(spawnX, spawnY);
             nudgeOutOfHazards(wallRects, hazards.pits);
             player.recordSafePosition();
 
-            // Chuyển map mới -> luôn chạy hiệu ứng spawn của nhân vật
             player.clearPressedKeys();
             if (player.isDead()) {
                 player.revive();
@@ -245,7 +313,6 @@ public class PlayScreen extends GameScreen {
         }
     }
 
-    /** Nếu điểm spawn nằm sát/trùng tường hoặc hố thì tự đẩy nhẹ về tâm phòng */
     private void nudgeOutOfHazards(List<Rectangle2D> wallRects, List<Rectangle2D> pitRects) {
         double centerX = mapWidth / 2.0;
         double centerY = mapHeight / 2.0;
@@ -413,10 +480,11 @@ public class PlayScreen extends GameScreen {
             skillText = (skillCd == 0) ? "OK" : (skillCd + "ms");
         }
         String statusLine = player.getSkin().getDisplayName()
-                + " | " + weaponText + " (Q:DoiVK, V:Up)"
+                + " | [" + (player.getCurrentWeaponIndex() + 1) + "/" + player.getWeaponArsenal().size() + "] "
+                + weaponText + " (1/2,Q:DoiVK, V:Up)"
                 + " | J:Danh | U:Skill(" + skillText + ")"
                 + " | K:Dash(" + dashText + ")"
-                + " | C:DoiNV | F3:Hitbox";
+                + " | F3:Hitbox";
 
         int bottomH = (int) Math.round(26 * k);
         int bottomY = (int) Math.round(v.h) - bottomH - (int) Math.round(8 * k);
