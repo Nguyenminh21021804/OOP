@@ -44,7 +44,7 @@ import java.util.Set;
  *      Đây là cơ hội vàng để người chơi phản công dồn sát thương.
  */
 @AnimationInfo(spritePrefix = {"big_demon"})
-public class DemonBossEnemy extends Enemy implements IRenderable {
+public class DemonBossEnemy extends Enemy implements IRenderable, PlayableBoss {
 
     public enum BossActionState {
         CHASE,              // Đang di chuyển tìm góc tiếp cận mục tiêu
@@ -752,6 +752,11 @@ public class DemonBossEnemy extends Enemy implements IRenderable {
 
     /** Alias giữ tương thích */
     public void playerSwipe() {
+        playerBite();
+    }
+
+    @Override
+    public void playerPrimaryAttack() {
         playerBite();
     }
 
